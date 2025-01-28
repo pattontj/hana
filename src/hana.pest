@@ -1,1 +1,21 @@
-field = { (ASCII_DIGIT | "." | "-")+ }
+lparen = _{"("}
+rparen = _{")"}
+
+// '_' marks the rule as "silent", doesn't show up inside other rules when matched
+program = _{SOI ~ NEWLINE* ~ (stmt ~ NEWLINE+) * ~ stmt? ~ EOI}
+
+stmt = _{ sexpr }
+
+// '@' makes rule "atomic", disables automatic whitespacing rules
+ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+
+integer = @{ ASCII_DIGIT+ }
+real = @{ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
+
+string = @{ "\"" | (!"\"" ~ ANY)* ~ "\"" }
+
+value = _{ integer | real | string | ident | sexpr }
+
+sexpr = { lparen ~ ident ~ (value)* ~ rparen }
+
+WHITESPACE = _{ " " }
