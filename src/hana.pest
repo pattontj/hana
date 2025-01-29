@@ -26,12 +26,12 @@ ident = @{
      not_reserved+    
 }
 
-integer = @{ "-"? ~ ASCII_DIGIT+ }
 real = @{ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
+integer = @{ "-"? ~ ASCII_DIGIT+ }
 
 string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
 
-value = _{ integer | real | string | ident | sexpr }
+value = _{ real | integer | string | ident | sexpr }
 
 sexpr = { lparen ~ ident ~ (value)* ~ rparen }
 

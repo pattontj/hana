@@ -49,14 +49,17 @@ fn build_ast_from_sexpr(pair: pest::iterators::Pair<Rule>) -> AstNode {
             let i: i32 = pair.as_str().parse().unwrap();
             Integer(i)
         }
-        Rule::real => Real(0.0),
+        Rule::real => {
+            let r: f64 = pair.as_str().parse().unwrap();
+            Real(r)
+        }
         Rule::string => {
             let str = &pair.as_str();
             // println!("{}", str);
-            // let str = &str[1..str.len() - 1];
+            let str = &str[1..str.len() - 1];
             // println!("{}", str);
             // should be: \" -> "
-            // let str = str.replace("\\\"", "\"");
+            let str = str.replace("\\\"", "\"");
 
             Str(CString::new(&str[..]).unwrap())
         }
