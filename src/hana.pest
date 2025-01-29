@@ -7,12 +7,29 @@ program = _{SOI ~ NEWLINE* ~ (stmt ~ NEWLINE+) * ~ stmt? ~ EOI}
 stmt = _{ sexpr }
 
 // '@' makes rule "atomic", disables automatic whitespacing rules
-ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
+// ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
 
-integer = @{ ASCII_DIGIT+ }
+not_reserved = {
+    !(
+        lparen 
+      |  rparen 
+      |  "\"" 
+      |  "\'" 
+      |  " " 
+      |  "\n" 
+      |  "\t" 
+    )
+    ~ASCII
+}
+
+ident = @{ 
+     not_reserved+    
+}
+
+integer = @{ "-"? ~ ASCII_DIGIT+ }
 real = @{ ASCII_DIGIT+ ~ "." ~ ASCII_DIGIT+ }
 
-string = @{ "\"" | (!"\"" ~ ANY)* ~ "\"" }
+string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
 
 value = _{ integer | real | string | ident | sexpr }
 

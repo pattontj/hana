@@ -1,4 +1,5 @@
 use std::env;
+use std::ffi::CString;
 use std::fs;
 
 use self::AstNode::*;
@@ -16,10 +17,12 @@ pub enum AstNode {
     Print(Box<AstNode>),
     Integer(i32),
     Real(f64),
+
+    Str(CString),
+
     Ident(String),
-    Sexpr {
-        params: Vec<Box<AstNode>>,
-    },
+
+    Sexpr { params: Vec<Box<AstNode>> },
 }
 
 pub fn parse(source: &str) -> Result<Vec<AstNode>, Error<Rule>> {
@@ -42,22 +45,35 @@ pub fn parse(source: &str) -> Result<Vec<AstNode>, Error<Rule>> {
 fn build_ast_from_sexpr(pair: pest::iterators::Pair<Rule>) -> AstNode {
     match pair.as_rule() {
         Rule::integer => {
-
-            println!("integer pair? {:?}", pair);
-            Integer(0)
-
-             }
-        Rule::real => { Real(0.0)}
-        Rule::string => { Integer(0) }
-        Rule::ident => { Ident(String::from(pair.as_str())) }
-        Rule::sexpr => {
-
-            while let Some(p) = pair.into_inner().next() {
-                println!("{:?}", p);
-            }
-            build_ast_from_sexpr(pair.into_inner().next().unwrap())
+            // println!("integer pair? {:?}", pair);
+            let i: i32 = pair.as_str().parse().unwrap();
+            Integer(i)
         }
-        _ => {Integer(0)}
+        Rule::real => Real(0.0),
+        Rule::string => {
+            let str = &pair.as_str();
+            // println!("{}", str);
+            // let str = &str[1..str.len() - 1];
+            // println!("{}", str);
+            // should be: \" -> "
+            // let str = str.replace("\\\"", "\"");
+
+            Str(CString::new(&str[..]).unwrap())
+        }
+        Rule::ident => Ident(String::from(pair.as_str())),
+        Rule::sexpr => {
+            let mut pair = pair.into_inner();
+
+            let mut params = Vec::new();
+
+            while let Some(p) = pair.next() {
+                // println!("{:?}", p);
+                params.push(Box::new(build_ast_from_sexpr(p)));
+            }
+
+            Sexpr { params }
+        }
+        _ => Integer(0),
     }
 }
 
@@ -70,8 +86,7 @@ fn main() {
     //     .next()
     //     .unwrap();
 
-    let file = parse(&unparsed_file)
-        .expect("unsuccessful parse");
+    let file = parse(&unparsed_file).expect("unsuccessful parse");
 
     println!("{:?}", file);
 }
