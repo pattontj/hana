@@ -1,10 +1,15 @@
 lparen = _{"("}
 rparen = _{")"}
+quote  = _{"'"}
 
 // '_' marks the rule as "silent", doesn't show up inside other rules when matched
-program = _{SOI ~ NEWLINE* ~ (stmt ~ NEWLINE+) * ~ stmt? ~ EOI}
+program = _{SOI ~ NEWLINE* ~ (form ~ NEWLINE+) * ~ form? ~ EOI}
 
-stmt = _{ sexpr }
+// form = _{ sexpr | qexpr}
+
+form = { real | integer | string | symbol | list }
+
+list = { lparen ~ (form)* ~ rparen }
 
 // '@' makes rule "atomic", disables automatic whitespacing rules
 // ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
@@ -22,7 +27,7 @@ not_reserved = {
     ~ASCII
 }
 
-ident = @{ 
+symbol = @{ 
      not_reserved+    
 }
 
@@ -31,8 +36,12 @@ integer = @{ "-"? ~ ASCII_DIGIT+ }
 
 string = @{ "\"" ~ (!"\"" ~ ANY)* ~ "\"" }
 
-value = _{ real | integer | string | ident | sexpr }
 
-sexpr = { lparen ~ ident ~ (value)* ~ rparen }
+
+
+
+
+// sexpr = { lparen ~ ident ~ (value)* ~ rparen }
+// qexpr = { quote ~ lparen ~ (value)* ~ rparen }
 
 WHITESPACE = _{ " " }

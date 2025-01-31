@@ -1,6 +1,9 @@
+// use std::cell::RefCell;
+// use std::collections::HashMap;
 use std::env;
 use std::ffi::CString;
 use std::fs;
+// use std::rc::Rc;
 
 use self::AstNode::*;
 
@@ -20,9 +23,11 @@ pub enum AstNode {
 
     Str(CString),
 
-    Ident(String),
+    Symbol(String),
 
-    Sexpr { params: Vec<Box<AstNode>> },
+    Nil(),
+
+    List { elements: Vec<Box<AstNode>> },
 }
 
 pub fn parse(source: &str) -> Result<Vec<AstNode>, Error<Rule>> {
@@ -32,8 +37,8 @@ pub fn parse(source: &str) -> Result<Vec<AstNode>, Error<Rule>> {
 
     for pair in pairs {
         match pair.as_rule() {
-            Rule::sexpr => {
-                ast.push(build_ast_from_sexpr(pair));
+            Rule::form => {
+                ast.push(build_ast_from_form(pair));
             }
             _ => {}
         }
@@ -42,7 +47,7 @@ pub fn parse(source: &str) -> Result<Vec<AstNode>, Error<Rule>> {
     Ok(ast)
 }
 
-fn build_ast_from_sexpr(pair: pest::iterators::Pair<Rule>) -> AstNode {
+fn build_ast_from_form(pair: pest::iterators::Pair<Rule>) -> AstNode {
     match pair.as_rule() {
         Rule::integer => {
             // println!("integer pair? {:?}", pair);
@@ -63,26 +68,33 @@ fn build_ast_from_sexpr(pair: pest::iterators::Pair<Rule>) -> AstNode {
 
             Str(CString::new(&str[..]).unwrap())
         }
-        Rule::ident => Ident(String::from(pair.as_str())),
-        Rule::sexpr => {
+        Rule::symbol => Symbol(String::from(pair.as_str())),
+
+        Rule::list => {
             let mut pair = pair.into_inner();
 
-            let mut params = Vec::new();
+            let mut elements = Vec::new();
 
             while let Some(p) = pair.next() {
                 // println!("{:?}", p);
-                params.push(Box::new(build_ast_from_sexpr(p)));
+                elements.push(Box::new(build_ast_from_form(p)));
             }
 
-            Sexpr { params }
+            List { elements }
         }
-        _ => Integer(0),
+
+        Rule::form => build_ast_from_form(pair.into_inner().next().unwrap()),
+        _ => Nil(),
     }
 }
 
+// pub struct Context {
+//     symbols: HashMap<String, Rc<RefCell<AstNode>>>,
+// }
+
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
-    let unparsed_file = fs::read_to_string("src/test.hana").expect("cannot read file!");
+    let unparsed_file = fs::read_to_string("tests/test.hana").expect("cannot read file!");
 
     // let file = HanaParser::parse(Rule::program, &unparsed_file)
     //     .expect("unsuccessful parse")
