@@ -1,9 +1,12 @@
-// use std::cell::RefCell;
-// use std::collections::HashMap;
+use std::borrow::Borrow;
+// use std::borrow::{Borrow, BorrowMut};
+// use std::any::Any;
+use std::cell::RefCell;
+use std::collections::HashMap;
 use std::env;
 use std::ffi::CString;
 use std::fs;
-// use std::rc::Rc;
+use std::rc::Rc;
 
 use self::AstNode::*;
 
@@ -15,9 +18,8 @@ use pest_derive::Parser;
 #[grammar = "hana.pest"]
 pub struct HanaParser;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum AstNode {
-    Print(Box<AstNode>),
     Integer(i32),
     Real(f64),
 
@@ -88,9 +90,100 @@ fn build_ast_from_form(pair: pest::iterators::Pair<Rule>) -> AstNode {
     }
 }
 
-// pub struct Context {
-//     symbols: HashMap<String, Rc<RefCell<AstNode>>>,
-// }
+type Context = HashMap<String, Rc<RefCell<AstNode>>>;
+
+pub trait ContextExt {
+    fn bind_symbol(&mut self, symbol: String, value: AstNode);
+    fn lookup_symbol(&self, symbol: String) -> Option<&Rc<RefCell<AstNode>>>;
+}
+
+impl ContextExt for Context {
+    fn bind_symbol(&mut self, symbol: String, value: AstNode) {
+        self.insert(symbol, Rc::new(RefCell::new(value)));
+    }
+
+    fn lookup_symbol(&self, symbol: String) -> Option<&Rc<RefCell<AstNode>>> {
+        self.get(&symbol)
+        // if let found = self.get(&symbol) {
+        //     println!("AAA");
+        // }
+
+        // match found {
+        //     Some(found) => Some(Rc::clone(found)),
+        //     None => {
+        //         println!("Could not find symbol '{:?}'", symbol);
+        //         None
+        //     }
+        // }
+
+        // let found = self.get(&symbol);
+
+        // match found {
+        //     Some(found) => Some(Rc::clone(found)),
+        //     None => {
+        //         println!("Could not find symbol '{:?}'", symbol);
+        //         None
+        //     }
+        // }
+    }
+}
+
+pub struct Environment {
+    bindings: Vec<Context>,
+}
+
+impl Environment {
+    fn bind_symbol(&mut self, symbol: String, value: AstNode) {
+        let len = self.bindings.len();
+        let ctx = self.bindings.get_mut(len - 1).unwrap();
+
+        ctx.bind_symbol(symbol, value);
+    }
+    fn lookup_symbol(&self, symbol: String) -> Option<Rc<RefCell<AstNode>>> {
+        let mut ctx = self.bindings.iter();
+
+        while let Some(ctx) = ctx.next() {
+            let found = ctx.lookup_symbol(symbol);
+            if let Some(found) = found {
+                return Some(Rc::clone(found));
+            } else {
+                return None;
+            }
+        }
+
+        None
+    }
+}
+
+pub fn evaluate(form: AstNode, env: &Environment) -> AstNode {
+    match form {
+        AstNode::Integer(_) => form,
+
+        AstNode::Real(_) => form,
+
+        AstNode::Str(_) => form,
+
+        AstNode::Symbol(form) => {
+            let mut result = env.lookup_symbol(form as String);
+
+            if result.is_some() {
+                // let test = result.unwrap().borrow_mut().to_owned();
+                let x = result.as_mut().unwrap();
+                let tmp = x.as_ref();
+                println!("reading from rc refcell? {:?}", tmp);
+                // println!("reading from rc refcell? {:?}", i32::from(tmp.into_inner()));
+                // println!(
+                //     "reading from rc refcell? {:?}",
+                //     *result.unwrap().borrow_mut()
+                // );
+            }
+
+            Nil()
+        }
+
+        _ => Nil(),
+    }
+}
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
@@ -103,5 +196,20 @@ fn main() {
 
     let file = parse(&unparsed_file).expect("unsuccessful parse");
 
-    println!("{:?}", file);
+    // let context = Context {
+    //     bindings: HashMap::new(),
+    // };
+
+    let mut env = Environment {
+        bindings: vec![Context::new()],
+    };
+
+    env.bind_symbol("x".to_string(), Integer(2));
+
+    let mut result = Nil();
+    for form in file {
+        result = evaluate(form, &env);
+    }
+
+    println!("{:?}", result);
 }
