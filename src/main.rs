@@ -99,32 +99,27 @@ pub trait ContextExt {
 
 impl ContextExt for Context {
     fn bind_symbol(&mut self, symbol: String, value: AstNode) {
-        self.insert(symbol, Rc::new(RefCell::new(value)));
+        match value {
+            AstNode::Symbol(value) => {
+                if let Some(lookup) = self.lookup_symbol(value.clone()) {
+                    println!(
+                        "Found binding from symbol {:?} to value {:?}",
+                        symbol, lookup
+                    );
+                    let symref = Rc::clone(lookup);
+                    self.insert(symbol, symref);
+                } else {
+                    println!("Error: could not find a binding with symbol {:?}", symbol);
+                }
+            }
+            _ => {
+                self.insert(symbol, Rc::new(RefCell::new(value)));
+            }
+        }
     }
 
     fn lookup_symbol(&self, symbol: String) -> Option<&Rc<RefCell<AstNode>>> {
         self.get(&symbol)
-        // if let found = self.get(&symbol) {
-        //     println!("AAA");
-        // }
-
-        // match found {
-        //     Some(found) => Some(Rc::clone(found)),
-        //     None => {
-        //         println!("Could not find symbol '{:?}'", symbol);
-        //         None
-        //     }
-        // }
-
-        // let found = self.get(&symbol);
-
-        // match found {
-        //     Some(found) => Some(Rc::clone(found)),
-        //     None => {
-        //         println!("Could not find symbol '{:?}'", symbol);
-        //         None
-        //     }
-        // }
     }
 }
 
@@ -205,6 +200,7 @@ fn main() {
     };
 
     env.bind_symbol("x".to_string(), Integer(2));
+    env.bind_symbol("y".to_string(), Symbol("x".to_string()));
 
     let mut result = Nil();
     for form in file {
