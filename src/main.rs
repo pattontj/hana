@@ -220,6 +220,24 @@ impl Environment {
     }
 }
 
+// Takes refs to a symbol and the current environment, and compares the symbol
+// against a set of built-in functions
+pub fn builtin_function(
+    symbol: &String,
+    funcall: &Vec<Box<Form>>,
+    env: &mut Environment,
+) -> Option<Form> {
+    match symbol {
+        symbol if symbol == "+" => {
+            println!("built-in function +");
+            return Some(Nil());
+        }
+        _ => {
+            return None;
+        }
+    }
+}
+
 /*
     The 'Evaluator' for Hana. Takes a valid form, and the environment in which
     the form is to be evaluated in, and returns the result of the evaluation
@@ -314,6 +332,10 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
             // if it is then bind the args to the function's parameters
             match first {
                 Symbol(first) => {
+                    if let Some(builtin) = builtin_function(&first, &elements, env) {
+                        println!("Built-in function found: {builtin:?}");
+                        return builtin;
+                    }
                     if let Some(lookup) = env.lookup_symbol(first) {
                         println!("Lookup: {:?}", lookup);
 
