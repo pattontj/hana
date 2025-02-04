@@ -20,22 +20,33 @@ use pest_derive::Parser;
 #[grammar = "hana.pest"]
 pub struct HanaParser;
 
+type Integer = i32;
+type Real = f64;
+type Str = CString;
+type Symbol = String;
+
 /*
     In Hana, a form is any valid data that can be evaluated by the evaluator.
 */
 #[derive(Debug, Clone, PartialEq)]
 pub enum Form {
-    Integer(i32),
-    Real(f64),
+    Integer(Integer),
+    Real(Real),
 
-    Str(CString),
+    Str(Str),
 
-    Symbol(String),
+    Symbol(Symbol),
 
     Nil(),
 
-    List { elements: Vec<Box<Form>> },
+    List(List),
+
     Function(Func),
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct List {
+    elements: Vec<Box<Form>>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -48,8 +59,8 @@ pub struct Func {
 impl Func {
     fn bind_params(&mut self, args: Vec<Box<Form>>, env: &mut Environment) {
         match *self.body {
-            Form::List { ref elements } => {
-                for f in elements {
+            Form::List(ref list) => {
+                for f in list.clone().elements {
                     println!("body element: {:?}", f);
                 }
             }
@@ -125,7 +136,7 @@ fn build_ast_from_form(pair: pest::iterators::Pair<Rule>) -> Form {
                 elements.push(Box::new(build_ast_from_form(p)));
             }
 
-            List { elements }
+            Form::List(List { elements })
         }
 
         Rule::form => build_ast_from_form(pair.into_inner().next().unwrap()),
@@ -137,18 +148,18 @@ fn build_ast_from_form(pair: pest::iterators::Pair<Rule>) -> Form {
     In Hana, a context is a HashMap that binds symbols to valid forms.
     Each context only holds the set of bindings made in it's respective lexical scope.
 */
-type Context = HashMap<String, Rc<RefCell<Form>>>;
+type Context = HashMap<Symbol, Rc<RefCell<Form>>>;
 
 /*
     Using an extension trait to make it a little prettier to use Contexts
 */
 pub trait ContextExt {
-    fn bind_symbol(&mut self, symbol: String, value: Form);
-    fn lookup_symbol(&self, symbol: String) -> Option<&Rc<RefCell<Form>>>;
+    fn bind_symbol(&mut self, symbol: Symbol, value: Form);
+    fn lookup_symbol(&self, symbol: Symbol) -> Option<&Rc<RefCell<Form>>>;
 }
 
 impl ContextExt for Context {
-    fn bind_symbol(&mut self, symbol: String, value: Form) {
+    fn bind_symbol(&mut self, symbol: Symbol, value: Form) {
         match value {
             Form::Symbol(value) => {
                 if let Some(lookup) = self.lookup_symbol(value.clone()) {
@@ -168,7 +179,7 @@ impl ContextExt for Context {
         }
     }
 
-    fn lookup_symbol(&self, symbol: String) -> Option<&Rc<RefCell<Form>>> {
+    fn lookup_symbol(&self, symbol: Symbol) -> Option<&Rc<RefCell<Form>>> {
         self.get(&symbol)
     }
 }
@@ -185,7 +196,7 @@ pub struct Environment {
 
 impl Environment {
     // Attempts to bind a valid form to a symbol in the topmost context in the context-stack.
-    fn bind_symbol(&mut self, symbol: String, value: Form) {
+    fn bind_symbol(&mut self, symbol: Symbol, value: Form) {
         let len = self.bindings.len();
         let ctx = self.bindings.get_mut(len - 1).unwrap();
 
@@ -194,7 +205,7 @@ impl Environment {
     // Attempts to find a form bound to the given symbol (passed as string), starting
     // from the top of the context stack, working its way down.
     // returns None if a binding is not found, otherwise returns the binding.
-    fn lookup_symbol(&self, symbol: String) -> Option<Rc<RefCell<Form>>> {
+    fn lookup_symbol(&self, symbol: Symbol) -> Option<Rc<RefCell<Form>>> {
         let mut ctx = self.bindings.iter();
 
         while let Some(ctx) = ctx.next() {
@@ -223,7 +234,7 @@ impl Environment {
 // Takes refs to a symbol and the current environment, and compares the symbol
 // against a set of built-in functions
 pub fn builtin_function(
-    symbol: &String,
+    symbol: &Symbol,
     funcall: &Vec<Box<Form>>,
     env: &mut Environment,
 ) -> Option<Form> {
@@ -281,7 +292,7 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
             Nil()
         }
 
-        Form::List { elements } => {
+        Form::List(list) => {
             /*
             List Evaluation Order:
             1. Special-Form
@@ -320,6 +331,7 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                     if no:
                         fail
             */
+            let mut elements = list.elements;
 
             // if it's an empty list, return nil
             if elements.len() == 0 {
@@ -497,13 +509,13 @@ fn main() {
     let f1 = Form::Function(Func {
         params: vec![Symbol("x".to_string())],
         context: Context::new(),
-        body: Box::new(List {
+        body: Box::new(Form::List(List {
             elements: vec![
                 Box::new(Symbol("+".to_string())),
                 Box::new(Integer(2)),
                 Box::new(Symbol("x".to_string())),
             ],
-        }),
+        })),
     });
 
     // (lambda () "Hello, hana!")
@@ -524,13 +536,13 @@ fn main() {
     let f4 = Form::Function(Func {
         params: vec![],
         context: Context::new(),
-        body: Box::new(List {
+        body: Box::new(Form::List(List {
             elements: vec![
                 Box::new(Symbol("+".to_string())),
                 Box::new(Integer(2)),
                 Box::new(Symbol("x".to_string())),
             ],
-        }),
+        })),
     });
 
     env.bind_symbol("f1".to_string(), f1);
