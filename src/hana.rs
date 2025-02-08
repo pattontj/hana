@@ -13,6 +13,7 @@ use std::rc::Rc;
 // use self::Form::*;
 
 pub mod builtin;
+pub mod special;
 use builtin::builtin_function;
 
 use pest::error::Error;
@@ -330,7 +331,7 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
             match first {
                 Form::Symbol(first) => {
                     if let Some(builtin) = builtin_function(&first, &list, env) {
-                        println!("Built-in function found: {builtin:?}");
+                        println!("Built-in function found: {first:?}");
                         return builtin;
                     }
                     if let Some(lookup) = env.lookup_symbol(first) {
