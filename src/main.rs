@@ -7,7 +7,7 @@ use hana::*;
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
-    let unparsed_file = fs::read_to_string("tests/test.hana").expect("cannot read file!");
+    let unparsed_file = fs::read_to_string("tests/bool.hana").expect("cannot read file!");
 
     // let file = HanaParser::parse(Rule::program, &unparsed_file)
     //     .expect("unsuccessful parse")

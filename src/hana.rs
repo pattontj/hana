@@ -1,13 +1,13 @@
-use std::borrow::{Borrow, BorrowMut};
+// use std::borrow::{Borrow, BorrowMut};
 // use std::borrow::{Borrow, BorrowMut};
 // use std::any::Any;
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::env;
+// use std::env;
 use std::ffi::CString;
-use std::fs;
+// use std::fs;
 use std::iter::zip;
-use std::ops::{Deref, DerefMut};
+// use std::ops::{Deref, DerefMut};
 use std::rc::Rc;
 
 // use self::Form::*;
@@ -36,16 +36,18 @@ pub type Symbol = String;
 pub enum Form {
     Integer(Integer),
     Real(Real),
-
     Str(Str),
-
+    Bool(bool),
     Symbol(Symbol),
-
-    Nil(),
-
     List(List),
-
     Function(Function),
+    Nil(),
+}
+
+impl Default for Form {
+    fn default() -> Self {
+        Form::Nil()
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -61,7 +63,7 @@ pub struct Function {
 }
 
 impl Function {
-    pub fn bind_params(&mut self, args: Vec<Box<Form>>, env: &mut Environment) {
+    pub fn bind_params(&mut self, args: Vec<Box<Form>>, _env: &mut Environment) {
         match *self.body {
             Form::List(ref list) => {
                 for f in list.clone().elements {
@@ -127,6 +129,11 @@ pub fn build_ast_from_form(pair: pest::iterators::Pair<Rule>) -> Form {
             let str = str.replace("\\\"", "\"");
 
             Form::Str(CString::new(&str[..]).unwrap())
+        }
+
+        Rule::bool => {
+            let b: bool = pair.as_str().parse().unwrap();
+            Form::Bool(b)
         }
         Rule::symbol => Form::Symbol(String::from(pair.as_str())),
 
@@ -230,6 +237,7 @@ impl Environment {
     }
 
     // Pops the topmost context from the context-stack.
+    #[allow(dead_code)]
     pub fn pop_context(&mut self) {
         self.bindings.pop();
     }
@@ -255,6 +263,8 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
         Form::Real(_) => form,
 
         Form::Str(_) => form,
+
+        Form::Bool(_) => form,
 
         Form::Symbol(form) => {
             let mut result = env.lookup_symbol(form as String);

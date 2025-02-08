@@ -1,13 +1,16 @@
+use crate::hana::special::*;
 use crate::hana::*;
 
 // Takes refs to a symbol and the current environment, and compares the symbol
 // against a set of built-in functions
 pub fn builtin_function(symbol: &Symbol, funcall: &List, env: &mut Environment) -> Option<Form> {
     match symbol.as_str() {
+        "if" => handle_if(funcall, env),
         "+" => handle_add(funcall, env),
         "-" => handle_sub(funcall, env),
         "*" => handle_mul(funcall, env),
         "/" => handle_div(funcall, env),
+        "<" => handle_lt(funcall, env),
         _ => {
             return None;
         }
@@ -213,6 +216,39 @@ fn handle_div(funcall: &List, env: &mut Environment) -> Option<Form> {
     }
 
     return Some(Form::Real(quot));
+}
+
+fn handle_lt(funcall: &List, env: &mut Environment) -> Option<Form> {
+    let mut itr = funcall.elements.iter();
+    itr.next();
+
+    let mut lhs: f64 = 0.0;
+    let mut rhs: f64 = 0.0;
+
+    if let Some(l) = itr.next() {
+        let eval = evaluate(*l.clone(), env);
+        match eval {
+            Form::Integer(eval) => lhs = eval as f64,
+            Form::Real(eval) => lhs = eval,
+            _ => {
+                println!("Error: Cannot compare inequality for non-numerical types.");
+                return Some(Form::Nil());
+            }
+        }
+    }
+    if let Some(r) = itr.next() {
+        let eval = evaluate(*r.clone(), env);
+        match eval {
+            Form::Integer(eval) => rhs = eval as f64,
+            Form::Real(eval) => rhs = eval,
+            _ => {
+                println!("Error: Cannot compare inequality for non-numerical types.");
+                return Some(Form::Nil());
+            }
+        }
+    }
+
+    Some(Form::Bool(lhs < rhs))
 }
 
 // fn handle_add(funcall: &List, env: &mut Environment) -> Option<Form> {

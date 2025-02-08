@@ -7,9 +7,9 @@ program = _{SOI ~ NEWLINE* ~ (form ~ NEWLINE+) * ~ form? ~ EOI}
 
 // form = _{ sexpr | qexpr}
 
-form = { real | integer | string | symbol | list }
+form = { real | integer | string | bool | symbol | list }
 
-list = { lparen ~ (form)* ~ rparen }
+list = { lparen ~ NEWLINE* ~ (form ~ NEWLINE*)* ~ NEWLINE* ~ rparen }
 
 // '@' makes rule "atomic", disables automatic whitespacing rules
 // ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }
@@ -23,9 +23,13 @@ not_reserved = {
       |  " " 
       |  "\n" 
       |  "\t" 
+      | "true"
+      | "false"
     )
     ~ASCII
 }
+
+bool = @{ "true" | "false" }
 
 symbol = @{ 
      not_reserved+    
