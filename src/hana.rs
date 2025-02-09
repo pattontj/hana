@@ -98,11 +98,29 @@ pub fn parse(source: &str) -> Result<Vec<Form>, Error<Rule>> {
             Rule::form => {
                 ast.push(build_ast_from_form(pair));
             }
+            Rule::quoted_form => {
+                // println!("Quoted form identified");
+                // println!("from parse, pair?: {pair:?}");
+                ast.push(build_ast_from_quoted_form(pair));
+            }
             _ => {}
         }
     }
 
     Ok(ast)
+}
+
+pub fn build_ast_from_quoted_form(pair: pest::iterators::Pair<Rule>) -> Form {
+    let mut quoted = List { elements: vec![] };
+    quoted
+        .elements
+        .push(Box::new(Form::Symbol("quote".to_string())));
+    // println!("PAIR: {pair:?}");
+    let f = build_ast_from_form(pair.into_inner().next().unwrap());
+    // println!("quoted form ast: {f:?}");
+    quoted.elements.push(Box::new(f));
+
+    Form::List(quoted)
 }
 
 /*
@@ -151,7 +169,10 @@ pub fn build_ast_from_form(pair: pest::iterators::Pair<Rule>) -> Form {
         }
 
         Rule::form => build_ast_from_form(pair.into_inner().next().unwrap()),
-        _ => Form::Nil(),
+        _ => {
+            // println!("Hitting edge case in build_ast_from_form");
+            Form::Nil()
+        }
     }
 }
 

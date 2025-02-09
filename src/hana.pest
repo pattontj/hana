@@ -3,10 +3,11 @@ rparen = _{")"}
 quote  = _{"'"}
 
 // '_' marks the rule as "silent", doesn't show up inside other rules when matched
-program = _{SOI ~ NEWLINE* ~ (form ~ NEWLINE+) * ~ form? ~ EOI}
+program = _{SOI ~ NEWLINE* ~ ( (quoted_form | form) ~ NEWLINE+ ) * ~ form? ~ EOI}
 
 // form = _{ sexpr | qexpr}
 
+quoted_form = { "'" ~ form }
 form = { real | integer | string | bool | symbol | list }
 
 list = { lparen ~ NEWLINE* ~ (form ~ NEWLINE*)* ~ NEWLINE* ~ rparen }

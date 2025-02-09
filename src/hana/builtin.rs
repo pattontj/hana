@@ -5,6 +5,7 @@ use crate::hana::*;
 // against a set of built-in functions
 pub fn builtin_function(symbol: &Symbol, funcall: &List, env: &mut Environment) -> Option<Form> {
     match symbol.as_str() {
+        "quote" => handle_quote(funcall, env),
         "if" => handle_if(funcall, env),
         "+" => handle_add(funcall, env),
         "-" => handle_sub(funcall, env),
