@@ -94,7 +94,7 @@ impl Function {
         match *self.body {
             Form::List(ref list) => {
                 for f in list.clone().elements {
-                    println!("body element: {:?}", f);
+                    // println!("body element: {:?}", f);
                 }
             }
             _ => {
@@ -295,10 +295,10 @@ impl ContextExt for Context {
         match value {
             Form::Symbol(value) => {
                 if let Some(lookup) = self.lookup_symbol(value.clone()) {
-                    println!(
-                        "Found binding from symbol {:?} to value {:?}",
-                        value, lookup
-                    );
+                    // println!(
+                    //     "Found binding from symbol {:?} to value {:?}",
+                    //     value, lookup
+                    // );
                     let symref = Rc::clone(lookup);
                     self.insert(symbol, symref);
                 } else {
@@ -341,11 +341,9 @@ impl Environment {
         let mut ctx = self.bindings.iter();
 
         while let Some(ctx) = ctx.next() {
-            let found = ctx.lookup_symbol(symbol);
+            let found = ctx.lookup_symbol(symbol.clone());
             if let Some(found) = found {
                 return Some(Rc::clone(found));
-            } else {
-                return None;
             }
         }
 
@@ -353,8 +351,12 @@ impl Environment {
     }
 
     // Pushes a new context to the top of the context-stack.
-    pub fn push_context(&mut self) {
+    pub fn push_new_context(&mut self) {
         self.bindings.push(Context::new());
+    }
+
+    pub fn push_context(&mut self, ctx: Context) {
+        self.bindings.push(ctx);
     }
 
     // Pops the topmost context from the context-stack.
@@ -388,7 +390,7 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
         Form::Bool(_) => form,
 
         Form::Symbol(form) => {
-            let mut result = env.lookup_symbol(form as String);
+            let mut result = env.lookup_symbol(form.clone());
 
             if result.is_some() {
                 // let test = result.unwrap().borrow_mut().to_owned();
@@ -405,7 +407,7 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                 // println!("cloned refcell: {:?}", test);
                 return test;
             }
-
+            println!("Error: symbol {form:?} is not bound in the current environment.");
             Form::Nil()
         }
 
@@ -462,11 +464,11 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
             match first {
                 Form::Symbol(first) => {
                     if let Some(builtin) = builtin_function(&first, &list, env) {
-                        println!("Built-in function found: {first:?}");
+                        // println!("Built-in function found: {first:?}");
                         return builtin;
                     }
                     if let Some(lookup) = env.lookup_symbol(first) {
-                        println!("Lookup: {:?}", lookup);
+                        // println!("Lookup: {:?}", lookup);
 
                         let fun = lookup.as_ref().borrow_mut().clone();
 
@@ -486,11 +488,6 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                                 println!("\tcontext: {:?}", fun.context);
                                 println!("\tbody: {:?}", fun.body);
                                 println!("\n");
-
-                                // create a new context, and for each formal parameter, bind the args passed
-                                // in the form being evaluated
-
-                                env.push_context();
 
                                 /*
                                     PROBLEM:
@@ -525,6 +522,10 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                                 // println!("\t=Matching param to args=");
                                 println!("\t=Testing bind_params=");
 
+                                // create a new context, and for each formal parameter, bind the args passed
+                                // in the form being evaluated
+                                // env.push_context();
+
                                 if let Some((_, rest)) = list.elements.split_first() {
                                     fun.bind_params(rest.to_vec(), env);
                                 }
@@ -536,6 +537,9 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                                 println!("\tbody: {:?}", fun.body);
                                 println!("\n");
 
+                                let ret = evaluate(*fun.body, env);
+                                env.pop_context();
+                                return ret;
                                 // if let Some((_, rest)) = elements.as_slice().split_first() {
                                 //     for (param, arg) in zip(fun.params, rest) {
                                 //         println!("param={param:?}, arg={arg:?}");
@@ -574,12 +578,34 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                                 //     println!("parameter: {param:?}");
                                 //     println!("parameter: {param:?}");
                                 // }
-
-                                return evaluate(*fun.body, env);
                             }
                             _ => {
                                 println!("Error: evaluated list is not a valid form");
                             }
+                        }
+                    }
+                }
+                // If handed a list, assume it's a function that resolves to a function
+                // and evaluate it before attempting a fn call, otherwise error out
+                Form::List(_) => {
+                    let fun = evaluate(first.clone(), env);
+                    match fun {
+                        Form::Function(mut fun) => {
+                            if let Some((_, rest)) = list.elements.split_first() {
+                                fun.bind_params(rest.to_vec(), env);
+                            }
+                            // println!("Evaluating function!");
+                            // println!("current fun.context?: {:?}", fun.context);
+
+                            env.push_context(fun.context.clone());
+
+                            // println!("current context?: {:?}", env.bindings.last().unwrap());
+                            let ret = evaluate(*fun.body, env);
+                            env.pop_context();
+                            return ret;
+                        }
+                        _ => {
+                            println!("Error: expected first element in list form to resolve to a function.");
                         }
                     }
                 }

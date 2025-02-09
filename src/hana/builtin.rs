@@ -41,10 +41,11 @@ fn handle_add(funcall: &List, env: &mut Environment) -> Option<Form> {
     let mut sum: Real = 0.0;
 
     while let Some(itr) = itr.next() {
-        println!("individual elem: {itr:?}");
+        // println!("individual elem: {itr:?}");
 
         let evaluated = evaluate(*itr.clone(), env);
 
+        // println!("Evaluated?: {evaluated:?}");
         match evaluated {
             Form::Integer(evaluated) => {
                 sum += evaluated as Real;
@@ -59,7 +60,7 @@ fn handle_add(funcall: &List, env: &mut Environment) -> Option<Form> {
             }
         }
 
-        println!("individual evaluated elem: {evaluated:?}");
+        // println!("individual evaluated elem: {evaluated:?}");
     }
 
     return Some(Form::Real(sum));
@@ -426,7 +427,7 @@ fn make_lambda(funcall: &List, env: &mut Environment) -> Option<Form> {
     if let Some(params) = itr.next() {
         match *params.clone() {
             Form::List(params) => {
-                println!("params?: {params:?}");
+                // println!("params?: {params:?}");
                 for elem in params.elements {
                     fun.params.push(*elem);
                 }
