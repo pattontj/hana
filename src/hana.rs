@@ -85,6 +85,11 @@ pub struct Function {
 }
 
 impl Function {
+    /*
+        Takes a list of args from where it's called and the current env,
+        and attempts to bind each param symbol to it's positionally equivalent
+        arg within the current context.
+    */
     pub fn bind_params(&mut self, args: Vec<Box<Form>>, _env: &mut Environment) {
         match *self.body {
             Form::List(ref list) => {
@@ -107,6 +112,10 @@ impl Function {
         }
     }
 
+    /*
+        Binds a symbol to a function's internal context by fetching it's Rc-Refcell
+        via an env lookup.
+    */
     pub fn bind_to_context(&mut self, env: &mut Environment, sym: String) {
         let formref = env.bindings.last().unwrap().lookup_symbol(sym.clone());
         if let Some(formref) = formref {
@@ -116,6 +125,10 @@ impl Function {
         }
     }
 
+    /*
+        Takes the current environment at time of creation and attempts to bind each explicitly
+        mentioned symbol to the fn's internal context, effectively closing over the env.
+    */
     pub fn close_over_env(&mut self, env: &mut Environment) {
         let body = self.body.clone();
 
@@ -158,7 +171,7 @@ impl Function {
                 }
             }
             _ => {
-                println!("Error: ");
+                println!("Error: something");
             }
         }
     }
@@ -188,6 +201,13 @@ pub fn parse(source: &str) -> Result<Vec<Form>, Error<Rule>> {
     Ok(ast)
 }
 
+/*
+    Helper function for parse, builds a valid AST-representation Form
+    from a quoted form grammar rule. Effectively replaces any instance of
+    ->    'form
+    with
+    ->    (quote form)
+*/
 pub fn build_ast_from_quoted_form(pair: pest::iterators::Pair<Rule>) -> Form {
     let mut quoted = List { elements: vec![] };
     quoted
@@ -245,6 +265,8 @@ pub fn build_ast_from_form(pair: pest::iterators::Pair<Rule>) -> Form {
 
             Form::List(List { elements })
         }
+
+        Rule::quoted_form => build_ast_from_quoted_form(pair.into_inner().next().unwrap()),
 
         Rule::form => build_ast_from_form(pair.into_inner().next().unwrap()),
         _ => {
