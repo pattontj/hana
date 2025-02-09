@@ -55,6 +55,28 @@ pub struct List {
     pub elements: Vec<Box<Form>>,
 }
 
+impl List {
+    pub fn get_symbols_from_list(&self) -> Vec<String> {
+        let mut itr = self.elements.iter();
+
+        let mut ret = vec![];
+
+        while let Some(itr) = itr.next() {
+            match *itr.clone() {
+                Form::Symbol(itr) => {
+                    ret.push(itr);
+                }
+                Form::List(itr) => {
+                    let mut l = itr.get_symbols_from_list();
+                    ret.append(&mut l);
+                }
+                _ => {}
+            }
+        }
+        ret
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct Function {
     pub params: Vec<Form>,
@@ -81,6 +103,62 @@ impl Function {
                 _ => {
                     println!("Error: formal parameter {param:?} is not a symbol");
                 }
+            }
+        }
+    }
+
+    pub fn bind_to_context(&mut self, env: &mut Environment, sym: String) {
+        let formref = env.bindings.last().unwrap().lookup_symbol(sym.clone());
+        if let Some(formref) = formref {
+            self.context.insert(sym, formref.clone());
+        } else {
+            println!("Error: could not find symbol {sym:?} in the environment.");
+        }
+    }
+
+    pub fn close_over_env(&mut self, env: &mut Environment) {
+        let body = self.body.clone();
+
+        // Fish through the body for any and all symbols, bind those to the fn's context
+
+        match *body {
+            // if it's just a symbol, lookup and then manually insert into the function's context
+            Form::Symbol(bd) => {
+                self.bind_to_context(env, bd);
+                // return Some(*body.clone());
+            }
+
+            // if it's a list, parse said list for symbols and do the same as above.
+            // If the symbol in the fn body matches a param, then we don't bind it
+            // as lexical scoping would indicate that it is not a value being closed over.
+            Form::List(body) => {
+                let mut itr = body.elements.iter();
+                // itr.next();
+                while let Some(itr) = itr.next() {
+                    let b = *itr.clone();
+                    match b {
+                        Form::Symbol(b) => {
+                            // HACK: checking against a const arr of built-in names.
+                            if !self.params.contains(itr)
+                                && !builtin::BUILTIN_SYMBOLS.contains(&&*b.clone().into_boxed_str())
+                            {
+                                self.bind_to_context(env, b);
+                            }
+                        }
+                        Form::List(b) => {
+                            // fetches all symbols in a list as strings, including from sub-lists
+                            let symbols = b.get_symbols_from_list();
+                            for s in symbols {
+                                println!("symbol found: {s:?}");
+                                self.bind_to_context(env, s)
+                            }
+                        }
+                        _ => {}
+                    }
+                }
+            }
+            _ => {
+                println!("Error: ");
             }
         }
     }

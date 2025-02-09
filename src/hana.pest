@@ -10,7 +10,7 @@ program = _{SOI ~ NEWLINE* ~ ( (quoted_form | form) ~ NEWLINE+ ) * ~ form? ~ EOI
 quoted_form = { "'" ~ form }
 form = { real | integer | string | bool | symbol | list }
 
-list = { lparen ~ NEWLINE* ~ (form ~ NEWLINE*)* ~ NEWLINE* ~ rparen }
+list = { lparen ~ NEWLINE* ~ ( ( quoted_form | form ) ~ NEWLINE*)* ~ NEWLINE* ~ rparen }
 
 // '@' makes rule "atomic", disables automatic whitespacing rules
 // ident = @{ ASCII_ALPHA ~ (ASCII_ALPHANUMERIC | "_")* }

@@ -1,11 +1,16 @@
 use crate::hana::special::*;
 use crate::hana::*;
 
+pub const BUILTIN_SYMBOLS: [&str; 12] = [
+    "lambda", "lambda", "if", "+", "-", "*", "/", "<", "<=", ">", ">=", "=",
+];
+
 // Takes refs to a symbol and the current environment, and compares the symbol
 // against a set of built-in functions
 pub fn builtin_function(symbol: &Symbol, funcall: &List, env: &mut Environment) -> Option<Form> {
     match symbol.as_str() {
         "quote" => handle_quote(funcall, env),
+        "lambda" => make_lambda(funcall, env),
         "if" => handle_if(funcall, env),
         "+" => handle_add(funcall, env),
         "-" => handle_sub(funcall, env),
@@ -396,6 +401,134 @@ fn handle_eq(funcall: &List, env: &mut Environment) -> Option<Form> {
 
     // Some(Form::Nil())
 }
+
+/*
+    Creates a new function via the (lambda) function call, closing over
+    any referenced symbols in the environment at time of creation.
+*/
+fn make_lambda(funcall: &List, env: &mut Environment) -> Option<Form> {
+    if funcall.elements.len() < 3 {
+        println!("Error: function 'lambda' takes >= 2 parameters");
+        return Some(Form::Nil());
+    }
+
+    let mut fun: Function = Function {
+        params: vec![],
+        context: HashMap::new(),
+        body: Box::new(Form::Nil()),
+    };
+
+    // Skip the function name
+    let mut itr = funcall.elements.iter();
+    itr.next();
+
+    // copy the parameter form
+    if let Some(params) = itr.next() {
+        match *params.clone() {
+            Form::List(params) => {
+                println!("params?: {params:?}");
+                for elem in params.elements {
+                    fun.params.push(*elem);
+                }
+            }
+            _ => {
+                println!("Error: ");
+            }
+        }
+    }
+
+    // Copy the body form
+    if let Some(body) = itr.next() {
+        fun.body = body.clone();
+    }
+
+    // fishes through the body of the function for refs to symbols in
+    // lexical scopes outside it's own, and creates ref. counted smart pointer
+    // clones that get stored in it's own context, effectively closing over that binding.
+    fun.close_over_env(env);
+
+    return Some(Form::Function(fun));
+}
+
+// fn make_lambda(funcall: &List, env: &mut Environment) -> Option<Form> {
+//     if funcall.elements.len() < 3 {
+//         println!("Error: function 'lambda' takes >= 2 parameters");
+//         return Some(Form::Nil());
+//     }
+
+//     // let mut fun: Function;
+//     let mut fun: Function = Function {
+//         params: vec![],
+//         context: HashMap::new(),
+//         body: Box::new(Form::Nil()),
+//     };
+
+//     let mut itr = funcall.elements.iter();
+//     itr.next();
+
+//     if let Some(params) = itr.next() {
+//         match *params.clone() {
+//             Form::List(params) => {
+//                 println!("params?: {params:?}");
+//                 for elem in params.elements {
+//                     fun.params.push(*elem);
+//                 }
+//             }
+//             _ => {
+//                 println!("Error: ");
+//             }
+//         }
+//     }
+
+//     // Fish through the body for any and all symbols, bind those to the fn's context
+//     if let Some(body) = itr.next() {
+//         fun.body = body.clone();
+
+//         let bd = body.clone();
+//         match *bd {
+//             // if it's just a symbol, lookup and then manually insert into the function's context
+//             Form::Symbol(bd) => {
+//                 fun.bind_to_context(env, bd);
+//                 // return Some(*body.clone());
+//             }
+
+//             // if it's a list, parse said list for symbols and do the same as above.
+//             // If the symbol in the fn body matches a param, then we don't bind it
+//             // as lexical scoping would indicate that it is not a value being closed over.
+
+//             // NOTE: This will not parse an inner list. This functionality needs to be broken
+//             // off into a function that can be recursively called to fix this.
+//             Form::List(body) => {
+//                 let mut itr = body.elements.iter();
+//                 // itr.next();
+//                 while let Some(itr) = itr.next() {
+//                     println!("TESDT>");
+//                     let b = *itr.clone();
+//                     match b {
+//                         Form::Symbol(b) => {
+//                             if !fun.params.contains(itr)
+//                                 && !BUILTIN_SYMBOLS.contains(&&*b.clone().into_boxed_str())
+//                             {
+//                                 fun.bind_to_context(env, b);
+//                             }
+//                         }
+//                         _ => {}
+//                     }
+//                     // println!("ELEM: {b:?}");
+//                 }
+
+//                 // for elem in body.elements {
+//                 //     println!("ELEM: {elem:?}");
+//                 // }
+//             }
+//             _ => {
+//                 println!("Error: ");
+//             }
+//         }
+//     }
+
+//     return Some(Form::Function(fun));
+// }
 
 // fn handle_add(funcall: &List, env: &mut Environment) -> Option<Form> {
 // }
