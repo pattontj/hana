@@ -1,4 +1,4 @@
 
-(if (< 1 2) 
-    "One is less than two!" 
-    "One is greater than two?????")
+(if (= x 2) 
+    "x is equal to two!" 
+    "x is NOT equal to two?????")

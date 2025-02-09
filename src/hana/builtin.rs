@@ -11,6 +11,10 @@ pub fn builtin_function(symbol: &Symbol, funcall: &List, env: &mut Environment) 
         "*" => handle_mul(funcall, env),
         "/" => handle_div(funcall, env),
         "<" => handle_lt(funcall, env),
+        "<=" => handle_lte(funcall, env),
+        ">" => handle_gt(funcall, env),
+        ">=" => handle_gte(funcall, env),
+        "=" => handle_eq(funcall, env),
         _ => {
             return None;
         }
@@ -219,6 +223,10 @@ fn handle_div(funcall: &List, env: &mut Environment) -> Option<Form> {
 }
 
 fn handle_lt(funcall: &List, env: &mut Environment) -> Option<Form> {
+    if funcall.elements.len() < 3 {
+        println!("Error: function '*' takes >= 2 parameters");
+        return Some(Form::Nil());
+    }
     let mut itr = funcall.elements.iter();
     itr.next();
 
@@ -249,6 +257,143 @@ fn handle_lt(funcall: &List, env: &mut Environment) -> Option<Form> {
     }
 
     Some(Form::Bool(lhs < rhs))
+}
+fn handle_lte(funcall: &List, env: &mut Environment) -> Option<Form> {
+    if funcall.elements.len() < 3 {
+        println!("Error: function '*' takes >= 2 parameters");
+        return Some(Form::Nil());
+    }
+    let mut itr = funcall.elements.iter();
+    itr.next();
+
+    let mut lhs: f64 = 0.0;
+    let mut rhs: f64 = 0.0;
+
+    if let Some(l) = itr.next() {
+        let eval = evaluate(*l.clone(), env);
+        match eval {
+            Form::Integer(eval) => lhs = eval as f64,
+            Form::Real(eval) => lhs = eval,
+            _ => {
+                println!("Error: Cannot compare inequality for non-numerical types.");
+                return Some(Form::Nil());
+            }
+        }
+    }
+    if let Some(r) = itr.next() {
+        let eval = evaluate(*r.clone(), env);
+        match eval {
+            Form::Integer(eval) => rhs = eval as f64,
+            Form::Real(eval) => rhs = eval,
+            _ => {
+                println!("Error: Cannot compare inequality for non-numerical types.");
+                return Some(Form::Nil());
+            }
+        }
+    }
+
+    Some(Form::Bool(lhs <= rhs))
+}
+
+fn handle_gt(funcall: &List, env: &mut Environment) -> Option<Form> {
+    if funcall.elements.len() < 3 {
+        println!("Error: function '*' takes >= 2 parameters");
+        return Some(Form::Nil());
+    }
+    let mut itr = funcall.elements.iter();
+    itr.next();
+
+    let mut lhs: f64 = 0.0;
+    let mut rhs: f64 = 0.0;
+
+    if let Some(l) = itr.next() {
+        let eval = evaluate(*l.clone(), env);
+        match eval {
+            Form::Integer(eval) => lhs = eval as f64,
+            Form::Real(eval) => lhs = eval,
+            _ => {
+                println!("Error: Cannot compare inequality for non-numerical types.");
+                return Some(Form::Nil());
+            }
+        }
+    }
+    if let Some(r) = itr.next() {
+        let eval = evaluate(*r.clone(), env);
+        match eval {
+            Form::Integer(eval) => rhs = eval as f64,
+            Form::Real(eval) => rhs = eval,
+            _ => {
+                println!("Error: Cannot compare inequality for non-numerical types.");
+                return Some(Form::Nil());
+            }
+        }
+    }
+
+    Some(Form::Bool(lhs > rhs))
+}
+fn handle_gte(funcall: &List, env: &mut Environment) -> Option<Form> {
+    if funcall.elements.len() < 3 {
+        println!("Error: function '*' takes >= 2 parameters");
+        return Some(Form::Nil());
+    }
+    let mut itr = funcall.elements.iter();
+    itr.next();
+
+    let mut lhs: f64 = 0.0;
+    let mut rhs: f64 = 0.0;
+
+    if let Some(l) = itr.next() {
+        let eval = evaluate(*l.clone(), env);
+        match eval {
+            Form::Integer(eval) => lhs = eval as f64,
+            Form::Real(eval) => lhs = eval,
+            _ => {
+                println!("Error: Cannot compare inequality for non-numerical types.");
+                return Some(Form::Nil());
+            }
+        }
+    }
+    if let Some(r) = itr.next() {
+        let eval = evaluate(*r.clone(), env);
+        match eval {
+            Form::Integer(eval) => rhs = eval as f64,
+            Form::Real(eval) => rhs = eval,
+            _ => {
+                println!("Error: Cannot compare inequality for non-numerical types.");
+                return Some(Form::Nil());
+            }
+        }
+    }
+
+    Some(Form::Bool(lhs >= rhs))
+}
+
+/*
+    Compares the value of two forms. If the form is a symbol,
+    the value that's bound to it will be compared.
+*/
+fn handle_eq(funcall: &List, env: &mut Environment) -> Option<Form> {
+    if funcall.elements.len() < 3 {
+        println!("Error: function '*' takes >= 2 parameters");
+        return Some(Form::Nil());
+    }
+    let mut itr = funcall.elements.iter();
+    itr.next();
+    let mut lhs = *itr
+        .next()
+        .expect("Error: cannot retrieve second argument from function call to eq")
+        .clone();
+    let mut rhs = *itr
+        .next()
+        .expect("Error: cannot retrieve third argument from function call to eq")
+        .clone();
+
+    lhs = evaluate(lhs, env);
+    rhs = evaluate(rhs, env);
+
+    Some(Form::Bool(lhs == rhs))
+
+    // Some(Form::Nil())
 }
 
 // fn handle_add(funcall: &List, env: &mut Environment) -> Option<Form> {
