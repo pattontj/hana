@@ -58,3 +58,23 @@ pub fn handle_quote(funcall: &List, _env: &mut Environment) -> Option<Form> {
 
     Some(Form::Nil())
 }
+
+pub fn def_symbol(funcall: &List, env: &mut Environment) -> Option<Form> {
+    if funcall.elements.len() < 3 {
+        println!("Error: function 'def' takes >= 2 parameters");
+        return Some(Form::Nil());
+    }
+
+    let sym = *funcall.elements[1].clone();
+    let value = *funcall.elements[2].clone();
+
+    match sym {
+        Form::Symbol(sym) => {
+            let evaluated = evaluate(value, env);
+            env.bind_symbol(sym, evaluated);
+        }
+        _ => {}
+    }
+
+    return Some(Form::Nil());
+}

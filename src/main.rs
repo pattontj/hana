@@ -24,53 +24,53 @@ fn main() {
         bindings: vec![Context::new()],
     };
 
-    env.bind_symbol("x".to_string(), Form::Integer(2));
-    env.bind_symbol("y".to_string(), Form::Symbol("x".to_string()));
+    // env.bind_symbol("x".to_string(), Form::Integer(2));
+    // env.bind_symbol("y".to_string(), Form::Symbol("x".to_string()));
 
     // (lambda (x) (+ 2 x))
-    let f1 = Form::Function(Function {
-        params: vec![Form::Symbol("x".to_string())],
-        context: Context::new(),
-        body: Box::new(Form::List(List {
-            elements: vec![
-                Box::new(Form::Symbol("+".to_string())),
-                Box::new(Form::Integer(2)),
-                Box::new(Form::Symbol("x".to_string())),
-            ],
-        })),
-    });
+    // let f1 = Form::Function(Function {
+    //     params: vec![Form::Symbol("x".to_string())],
+    //     context: Context::new(),
+    //     body: Box::new(Form::List(List {
+    //         elements: vec![
+    //             Box::new(Form::Symbol("+".to_string())),
+    //             Box::new(Form::Integer(2)),
+    //             Box::new(Form::Symbol("x".to_string())),
+    //         ],
+    //     })),
+    // });
 
     // (lambda () "Hello, hana!")
-    let f2 = Form::Function(Function {
-        params: vec![],
-        context: Context::new(),
-        body: Box::new(Form::Str(CString::new("Hello, hana!").unwrap())),
-    });
+    // let f2 = Form::Function(Function {
+    //     params: vec![],
+    //     context: Context::new(),
+    //     body: Box::new(Form::Str(CString::new("Hello, hana!").unwrap())),
+    // });
 
     // (lambda () x)
-    let f3 = Form::Function(Function {
-        params: vec![],
-        context: Context::new(),
-        body: Box::new(Form::Symbol("x".to_string())),
-    });
+    // let f3 = Form::Function(Function {
+    //     params: vec![],
+    //     context: Context::new(),
+    //     body: Box::new(Form::Symbol("x".to_string())),
+    // });
 
     // (lambda () (+ 2 x))
-    let f4 = Form::Function(Function {
-        params: vec![],
-        context: Context::new(),
-        body: Box::new(Form::List(List {
-            elements: vec![
-                Box::new(Form::Symbol("+".to_string())),
-                Box::new(Form::Integer(2)),
-                Box::new(Form::Symbol("x".to_string())),
-            ],
-        })),
-    });
+    // let f4 = Form::Function(Function {
+    //     params: vec![],
+    //     context: Context::new(),
+    //     body: Box::new(Form::List(List {
+    //         elements: vec![
+    //             Box::new(Form::Symbol("+".to_string())),
+    //             Box::new(Form::Integer(2)),
+    //             Box::new(Form::Symbol("x".to_string())),
+    //         ],
+    //     })),
+    // });
 
-    env.bind_symbol("f1".to_string(), f1);
-    env.bind_symbol("f2".to_string(), f2);
-    env.bind_symbol("f3".to_string(), f3);
-    env.bind_symbol("f4".to_string(), f4);
+    // env.bind_symbol("f1".to_string(), f1);
+    // env.bind_symbol("f2".to_string(), f2);
+    // env.bind_symbol("f3".to_string(), f3);
+    // env.bind_symbol("f4".to_string(), f4);
 
     let mut result = hana::Form::Nil();
     for form in file {

@@ -90,7 +90,7 @@ impl Function {
         and attempts to bind each param symbol to it's positionally equivalent
         arg within the current context.
     */
-    pub fn bind_params(&mut self, args: Vec<Box<Form>>, _env: &mut Environment) {
+    pub fn bind_params(&mut self, args: Vec<Box<Form>>, env: &mut Environment) {
         match *self.body {
             Form::List(ref list) => {
                 for f in list.clone().elements {
@@ -103,12 +103,25 @@ impl Function {
         }
 
         for (param, arg) in zip(&self.params, args) {
-            match param {
-                Form::Symbol(param) => self.context.bind_symbol(param.clone(), *arg),
-                _ => {
-                    println!("Error: formal parameter {param:?} is not a symbol");
+            match (param, *arg) {
+                (Form::Symbol(param), Form::Symbol(arg)) => {
+                    println!("Arg?: {arg:?}");
+                    let a = evaluate(Form::Symbol(arg), env);
+                    println!("eval test in fn bind_params: {a:?}");
+                    self.context.bind_symbol(param.clone(), a);
                 }
+                _ => {}
             }
+            // match param {
+            //     Form::Symbol(param) => {
+            //         // let a = evaluate(Form::Symbol(*param.clone().to_string()), env);
+            //         // println!("eval test in fn bind_params: {a:?}");
+            //         self.context.bind_symbol(param.clone(), *arg);
+            //     }
+            //     _ => {
+            //         println!("Error: formal parameter {param:?} is not a symbol");
+            //     }
+            // }
         }
     }
 
@@ -287,11 +300,13 @@ pub type Context = HashMap<Symbol, Rc<RefCell<Form>>>;
 */
 pub trait ContextExt {
     fn bind_symbol(&mut self, symbol: Symbol, value: Form);
+    fn bind_symbol_from_refcell(&mut self, symbol: Symbol, value: &Rc<RefCell<Form>>);
     fn lookup_symbol(&self, symbol: Symbol) -> Option<&Rc<RefCell<Form>>>;
 }
 
 impl ContextExt for Context {
     fn bind_symbol(&mut self, symbol: Symbol, value: Form) {
+        println!("symbol: {symbol:?}, value: {value:?}");
         match value {
             Form::Symbol(value) => {
                 if let Some(lookup) = self.lookup_symbol(value.clone()) {
@@ -309,6 +324,11 @@ impl ContextExt for Context {
                 self.insert(symbol, Rc::new(RefCell::new(value)));
             }
         }
+    }
+    fn bind_symbol_from_refcell(&mut self, symbol: Symbol, value: &Rc<RefCell<Form>>) {
+        println!("symbol: {symbol:?}, value: {value:?}");
+        let symref = Rc::clone(value);
+        self.insert(symbol, symref);
     }
 
     fn lookup_symbol(&self, symbol: Symbol) -> Option<&Rc<RefCell<Form>>> {
@@ -529,6 +549,8 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                                 if let Some((_, rest)) = list.elements.split_first() {
                                     fun.bind_params(rest.to_vec(), env);
                                 }
+
+                                env.push_context(fun.context.clone());
 
                                 println!("[DEBUG] Valid function form");
 

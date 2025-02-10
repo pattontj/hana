@@ -11,6 +11,7 @@ pub fn builtin_function(symbol: &Symbol, funcall: &List, env: &mut Environment) 
     match symbol.as_str() {
         "quote" => handle_quote(funcall, env),
         "lambda" => make_lambda(funcall, env),
+        "def" => def_symbol(funcall, env),
         "if" => handle_if(funcall, env),
         "+" => handle_add(funcall, env),
         "-" => handle_sub(funcall, env),
