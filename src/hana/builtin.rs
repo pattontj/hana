@@ -417,6 +417,7 @@ fn make_lambda(funcall: &List, env: &mut Environment) -> Option<Form> {
     let mut fun: Function = Function {
         params: vec![],
         context: HashMap::new(),
+        env: Environment::new(),
         body: Box::new(Form::Nil()),
     };
 

@@ -55,32 +55,11 @@ pub struct List {
     pub elements: Vec<Box<Form>>,
 }
 
-impl List {
-    pub fn get_symbols_from_list(&self) -> Vec<String> {
-        let mut itr = self.elements.iter();
-
-        let mut ret = vec![];
-
-        while let Some(itr) = itr.next() {
-            match *itr.clone() {
-                Form::Symbol(itr) => {
-                    ret.push(itr);
-                }
-                Form::List(itr) => {
-                    let mut l = itr.get_symbols_from_list();
-                    ret.append(&mut l);
-                }
-                _ => {}
-            }
-        }
-        ret
-    }
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct Function {
     pub params: Vec<Form>,
     pub context: Context,
+    pub env: Environment,
     pub body: Box<Form>,
 }
 
@@ -109,6 +88,12 @@ impl Function {
                     let a = evaluate(Form::Symbol(arg), env);
                     println!("eval test in fn bind_params: {a:?}");
                     self.context.bind_symbol(param.clone(), a);
+                }
+                (Form::Symbol(param), arg) => {
+                    println!("Arg?: {arg:?}");
+                    // let a = evaluate(Form::Symbol(arg), env);
+                    // println!("eval test in fn bind_params: {a:?}");
+                    self.context.bind_symbol(param.clone(), arg);
                 }
                 _ => {}
             }
@@ -143,50 +128,7 @@ impl Function {
         mentioned symbol to the fn's internal context, effectively closing over the env.
     */
     pub fn close_over_env(&mut self, env: &mut Environment) {
-        let body = self.body.clone();
-
-        // Fish through the body for any and all symbols, bind those to the fn's context
-
-        match *body {
-            // if it's just a symbol, lookup and then manually insert into the function's context
-            Form::Symbol(bd) => {
-                self.bind_to_context(env, bd);
-                // return Some(*body.clone());
-            }
-
-            // if it's a list, parse said list for symbols and do the same as above.
-            // If the symbol in the fn body matches a param, then we don't bind it
-            // as lexical scoping would indicate that it is not a value being closed over.
-            Form::List(body) => {
-                let mut itr = body.elements.iter();
-                // itr.next();
-                while let Some(itr) = itr.next() {
-                    let b = *itr.clone();
-                    match b {
-                        Form::Symbol(b) => {
-                            // HACK: checking against a const arr of built-in names.
-                            if !self.params.contains(itr)
-                                && !builtin::BUILTIN_SYMBOLS.contains(&&*b.clone().into_boxed_str())
-                            {
-                                self.bind_to_context(env, b);
-                            }
-                        }
-                        Form::List(b) => {
-                            // fetches all symbols in a list as strings, including from sub-lists
-                            let symbols = b.get_symbols_from_list();
-                            for s in symbols {
-                                println!("symbol found: {s:?}");
-                                self.bind_to_context(env, s)
-                            }
-                        }
-                        _ => {}
-                    }
-                }
-            }
-            _ => {
-                println!("Error: something");
-            }
-        }
+        self.env = env.clone();
     }
 }
 
@@ -342,11 +284,15 @@ impl ContextExt for Context {
     a lexical stack of 'Context's, each of which are a HashMap that maps symbols to
     a valid form held in a Rc<RefCell<Form>>.
 */
+#[derive(Debug, Clone, PartialEq)]
 pub struct Environment {
     pub bindings: Vec<Context>,
 }
 
 impl Environment {
+    pub fn new() -> Environment {
+        Environment { bindings: vec![] }
+    }
     // Attempts to bind a valid form to a symbol in the topmost context in the context-stack.
     pub fn bind_symbol(&mut self, symbol: Symbol, value: Form) {
         let len = self.bindings.len();
@@ -376,12 +322,14 @@ impl Environment {
     }
 
     pub fn push_context(&mut self, ctx: Context) {
+        println!("Push context");
         self.bindings.push(ctx);
     }
 
     // Pops the topmost context from the context-stack.
     #[allow(dead_code)]
     pub fn pop_context(&mut self) {
+        println!("Pop context");
         self.bindings.pop();
     }
 }
@@ -506,6 +454,7 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
 
                                 println!("\tparams: {:?}", fun.params);
                                 println!("\tcontext: {:?}", fun.context);
+                                println!("\tenv: {:?}", fun.env);
                                 println!("\tbody: {:?}", fun.body);
                                 println!("\n");
 
@@ -550,17 +499,32 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                                     fun.bind_params(rest.to_vec(), env);
                                 }
 
+                                /*
+                                iterate through the function's env back to front, and clone each context
+                                into the current env.
+                                */
+                                println!("global env (before): {env:?}");
+
                                 env.push_context(fun.context.clone());
+                                for it in fun.env.bindings.iter().rev() {
+                                    env.push_context(it.clone());
+                                }
+                                println!("global env (after): {env:?}");
 
                                 println!("[DEBUG] Valid function form");
 
                                 println!("\tparams: {:?}", fun.params);
                                 println!("\tcontext: {:?}", fun.context);
+                                println!("\tenv: {:?}", fun.env);
                                 println!("\tbody: {:?}", fun.body);
                                 println!("\n");
 
                                 let ret = evaluate(*fun.body, env);
-                                env.pop_context();
+
+                                for i in (0..fun.env.bindings.len() + 1) {
+                                    env.pop_context();
+                                }
+
                                 return ret;
                                 // if let Some((_, rest)) = elements.as_slice().split_first() {
                                 //     for (param, arg) in zip(fun.params, rest) {

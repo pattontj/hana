@@ -1,11 +1,12 @@
 
-'(1 2 3 4)
-
 
 (def life 42)
 
+(def make-greeter
+  (lambda ()
+          (lambda (x) x)))
 
-(def plus-two (lambda (x) (+ 2 x)))
 
-(plus-two life)
+(def greet (make-greeter))
 
+(greet "test?")
