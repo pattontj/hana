@@ -1,0 +1,17 @@
+
+Functions:
+- cons
+- progn
+- read & write
+
+
+Macro basics - higher-order helpers:
+- equivalent to backquote syntax for list generation
+	- Escape ',' and unpack list '@' functions
+
+-
+
+C-FFI:
+- Read shared libraries and get valid syms
+- Need some common way to bind those .so symbols to hana symbols
+	- Need functions to map datatypes in hana to C datatypes
