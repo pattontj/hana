@@ -12,6 +12,8 @@ pub fn builtin_function(symbol: &Symbol, funcall: &List, env: &mut Environment) 
         "quote" => handle_quote(funcall, env),
         "lambda" => make_lambda(funcall, env),
         "def" => def_symbol(funcall, env),
+        "car" => handle_car(funcall, env),
+        "cdr" => handle_cdr(funcall, env),
         "if" => handle_if(funcall, env),
         "+" => handle_add(funcall, env),
         "-" => handle_sub(funcall, env),
@@ -453,85 +455,113 @@ fn make_lambda(funcall: &List, env: &mut Environment) -> Option<Form> {
     return Some(Form::Function(fun));
 }
 
-// fn make_lambda(funcall: &List, env: &mut Environment) -> Option<Form> {
-//     if funcall.elements.len() < 3 {
-//         println!("Error: function 'lambda' takes >= 2 parameters");
-//         return Some(Form::Nil());
-//     }
+fn handle_car(funcall: &List, env: &mut Environment) -> Option<Form> {
+    if funcall.elements.len() < 2 {
+        println!("Error: function 'car' takes 1 parameter");
+        return Some(Form::Nil());
+    }
+    let mut itr = funcall.elements.iter();
+    itr.next();
 
-//     // let mut fun: Function;
-//     let mut fun: Function = Function {
-//         params: vec![],
-//         context: HashMap::new(),
-//         body: Box::new(Form::Nil()),
-//     };
+    if let Some(itr) = itr.next() {
+        match *itr.clone() {
+            Form::List(_) => {
+                println!("test");
+                let car = evaluate(*itr.clone(), env);
+                match car {
+                    Form::List(car) => {
+                        let c = car.elements.first().unwrap();
 
-//     let mut itr = funcall.elements.iter();
-//     itr.next();
+                        // return Some(*car.clone());
+                        return Some(*c.clone());
+                    }
+                    _ => {
+                        println!("Error:");
+                    }
+                }
+            }
+            Form::Symbol(_) => {
+                let lstref = evaluate(*itr.clone(), env);
+                let lst = lstref.clone();
+                match lst {
+                    Form::List(lst) => {
+                        let car = lst.elements.first().unwrap();
 
-//     if let Some(params) = itr.next() {
-//         match *params.clone() {
-//             Form::List(params) => {
-//                 println!("params?: {params:?}");
-//                 for elem in params.elements {
-//                     fun.params.push(*elem);
-//                 }
-//             }
-//             _ => {
-//                 println!("Error: ");
-//             }
-//         }
-//     }
+                        return Some(*car.clone());
+                    }
+                    _ => {
+                        println!("Error:");
+                    }
+                }
+            }
+            _ => {
+                println!("Error: argument passed to car is not a list.");
+            }
+        }
+    }
 
-//     // Fish through the body for any and all symbols, bind those to the fn's context
-//     if let Some(body) = itr.next() {
-//         fun.body = body.clone();
+    Some(Form::Nil())
+}
 
-//         let bd = body.clone();
-//         match *bd {
-//             // if it's just a symbol, lookup and then manually insert into the function's context
-//             Form::Symbol(bd) => {
-//                 fun.bind_to_context(env, bd);
-//                 // return Some(*body.clone());
-//             }
+fn handle_cdr(funcall: &List, env: &mut Environment) -> Option<Form> {
+    if funcall.elements.len() < 2 {
+        println!("Error: function 'cdr' takes 1 parameter");
+        return Some(Form::Nil());
+    }
+    let mut itr = funcall.elements.iter();
+    itr.next();
 
-//             // if it's a list, parse said list for symbols and do the same as above.
-//             // If the symbol in the fn body matches a param, then we don't bind it
-//             // as lexical scoping would indicate that it is not a value being closed over.
+    if let Some(itr) = itr.next() {
+        match *itr.clone() {
+            Form::List(_) => {
+                // println!("test");
+                // let (_, cdr) = itr.elements.split_first().unwrap();
 
-//             // NOTE: This will not parse an inner list. This functionality needs to be broken
-//             // off into a function that can be recursively called to fix this.
-//             Form::List(body) => {
-//                 let mut itr = body.elements.iter();
-//                 // itr.next();
-//                 while let Some(itr) = itr.next() {
-//                     println!("TESDT>");
-//                     let b = *itr.clone();
-//                     match b {
-//                         Form::Symbol(b) => {
-//                             if !fun.params.contains(itr)
-//                                 && !BUILTIN_SYMBOLS.contains(&&*b.clone().into_boxed_str())
-//                             {
-//                                 fun.bind_to_context(env, b);
-//                             }
-//                         }
-//                         _ => {}
-//                     }
-//                     // println!("ELEM: {b:?}");
-//                 }
+                // return Some(Form::List(List {
+                //     elements: cdr.to_vec(),
+                // }));
 
-//                 // for elem in body.elements {
-//                 //     println!("ELEM: {elem:?}");
-//                 // }
-//             }
-//             _ => {
-//                 println!("Error: ");
-//             }
-//         }
-//     }
+                let cdr = evaluate(*itr.clone(), env);
+                match cdr {
+                    Form::List(cdr) => {
+                        let (_, c) = cdr.elements.split_first().unwrap();
 
-//     return Some(Form::Function(fun));
-// }
+                        // return Some(*car.clone());
+                        // return Some(*c.clone());
+
+                        return Some(Form::List(List {
+                            elements: c.to_vec(),
+                        }));
+                    }
+                    _ => {
+                        println!("Error:");
+                    }
+                }
+            }
+            Form::Symbol(_) => {
+                let lstref = evaluate(*itr.clone(), env);
+                let lst = lstref.clone();
+                match lst {
+                    Form::List(lst) => {
+                        let (_, cdr) = lst.elements.split_first().unwrap();
+
+                        return Some(Form::List(List {
+                            elements: cdr.to_vec(),
+                        }));
+                    }
+                    _ => {
+                        println!("Error:");
+                    }
+                }
+            }
+            _ => {
+                println!("Error: argument passed to car is not a list.");
+            }
+        }
+    }
+
+    Some(Form::Nil())
+}
 
 // fn handle_add(funcall: &List, env: &mut Environment) -> Option<Form> {
 // }

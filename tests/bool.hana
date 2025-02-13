@@ -12,3 +12,10 @@
 
 (greet-world)
 (greet-universe)
+
+
+
+(def my-list '(1 2 3 4))
+
+
+(car (cdr (cdr (cdr my-list))))

@@ -308,15 +308,11 @@ impl Environment {
     // from the top of the context stack, working its way down.
     // returns None if a binding is not found, otherwise returns the binding.
     pub fn lookup_symbol(&self, symbol: Symbol) -> Option<Rc<RefCell<Form>>> {
-        let mut ctx = self.bindings.iter();
-
-        while let Some(ctx) = ctx.next() {
-            let found = ctx.lookup_symbol(symbol.clone());
-            if let Some(found) = found {
+        for ctx in self.bindings.iter().rev() {
+            if let Some(found) = ctx.lookup_symbol(symbol.clone()) {
                 return Some(Rc::clone(found));
             }
         }
-
         None
     }
 
@@ -444,13 +440,6 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
 
                         let fun = lookup.as_ref().borrow_mut().clone();
 
-                        /*
-                        IDEA: Have a 'built-in function' struct of some kind that
-                            can be used to differentiate from a regular function.
-                            That way it can be matched in the following block and
-                            be handled appropriately.
-                        */
-
                         // if the symbol is a function, treat it as a function call
                         match fun {
                             Form::Function(mut fun) => {
@@ -461,36 +450,6 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                                 // println!("\tenv: {:?}", fun.env);
                                 // println!("\tbody: {:?}", fun.body);
                                 // println!("\n");
-
-                                /*
-                                    PROBLEM:
-                                    Currently the Function data type claims to hold onto a context object.
-                                    This poses a problem because all contexts are owned by the environment currently,
-                                    and trying to do any kind of ref-counting on contexts will end up being a mental pain.
-
-                                    SOLUTION:
-                                    The function will own it's own context. Inside that context will be:
-                                    1. Bound parameters
-                                    2. Closed-over values (I.E. cloned Rc-RefCells of only the explicitly referenced symbols)
-
-                                    When a function is called and has to resolve a symbol to a form, it will first query its own
-                                    context, and then after will query the environment.
-
-                                    To achieve this functionality, the evaluator will examine the body of the function and build
-                                    a list of any symbol(s) that do not match the name of the function's formal parameters.
-                                    It will then perform a lookup on that outer symbol, and bind that symbol's associated
-                                    value within its own personal context.
-
-                                    When a symbol is bound to a value in Hana, that value is first evaluated; when that value
-                                    is a symbol, this means that the newly bound symbol is directly bound to a clone of
-                                    the associated Rc-Refcell.
-
-                                    This means that the referenced symbol-value bindings are closed over, and since the binding holds a
-                                    reference-counted smart pointer, the original context it was defined in may be cleaned up while
-                                    the binding and value are maintained.
-
-
-                                */
 
                                 // println!("\t=Matching param to args=");
                                 println!("\t=Testing bind_params=");
@@ -533,44 +492,6 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                                 println!("fun ctx after call?: {:?}", fun.context);
 
                                 return ret;
-                                // if let Some((_, rest)) = elements.as_slice().split_first() {
-                                //     for (param, arg) in zip(fun.params, rest) {
-                                //         println!("param={param:?}, arg={arg:?}");
-                                //         match param {
-                                //             Symbol(param) => {
-                                //                 env.bind_symbol(param, *arg.clone());
-                                //             }
-
-                                //             _ => {
-                                //                 println!("Error: formal parameter {param:?} is not a symbol");
-                                //             }
-                                //         }
-                                //     }
-                                // }
-
-                                //
-                                // match *fun.body {
-                                //     Form::List { ref elements } => {
-                                //         println!("test");
-                                //         for e in elements.clone() {
-                                //             println!("list elem in body of function: {e:?}");
-                                //             // if !fun.params.contains(&*e) {
-                                //             //     println!("'{e:?}' not in param list");
-                                //             // }
-                                //         }
-                                //     }
-                                //     Form::Function { .. } => {
-                                //         println!("aaa");
-                                //     }
-                                //     _ => {
-                                //         println!("aaa");
-                                //     }
-                                // }
-
-                                // for param in params {
-                                //     println!("parameter: {param:?}");
-                                //     println!("parameter: {param:?}");
-                                // }
                             }
                             _ => {
                                 println!("Error: evaluated list is not a valid form");
