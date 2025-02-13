@@ -78,3 +78,21 @@ pub fn def_symbol(funcall: &List, env: &mut Environment) -> Option<Form> {
 
     return Some(Form::Nil());
 }
+
+/*
+    Takes a variable number of forms, and evaluates each one from left to right.
+    returns the result of the last evaluated form. If no forms are given, it returns
+    Nil.
+*/
+pub fn handle_progn(funcall: &List, env: &mut Environment) -> Option<Form> {
+    let mut form = funcall.elements.iter();
+    form.next();
+
+    let mut eval = Form::Nil();
+
+    while let Some(form) = form.next() {
+        eval = evaluate(*form.clone(), env);
+    }
+
+    return Some(eval);
+}

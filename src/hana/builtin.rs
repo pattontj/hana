@@ -14,6 +14,7 @@ pub fn builtin_function(symbol: &Symbol, funcall: &List, env: &mut Environment) 
         "def" => def_symbol(funcall, env),
         "car" => handle_car(funcall, env),
         "cdr" => handle_cdr(funcall, env),
+        "progn" => handle_progn(funcall, env),
         "if" => handle_if(funcall, env),
         "+" => handle_add(funcall, env),
         "-" => handle_sub(funcall, env),

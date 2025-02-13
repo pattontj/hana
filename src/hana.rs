@@ -84,9 +84,9 @@ impl Function {
         for (param, arg) in zip(&self.params, args) {
             match (param, *arg) {
                 (Form::Symbol(param), Form::Symbol(arg)) => {
-                    println!("Arg?: {arg:?}");
+                    // println!("Arg?: {arg:?}");
                     let a = evaluate(Form::Symbol(arg), env);
-                    println!("eval test in fn bind_params: {a:?}");
+                    // println!("eval test in fn bind_params: {a:?}");
                     self.context.bind_symbol(param.clone(), a);
                 }
                 (Form::Symbol(param), arg) => {
@@ -252,7 +252,7 @@ pub trait ContextExt {
 
 impl ContextExt for Context {
     fn bind_symbol(&mut self, symbol: Symbol, value: Form) {
-        println!("symbol: {symbol:?}, value: {value:?}");
+        // println!("symbol: {symbol:?}, value: {value:?}");
         match value {
             Form::Symbol(value) => {
                 if let Some(lookup) = self.lookup_symbol(value.clone()) {
@@ -272,7 +272,7 @@ impl ContextExt for Context {
         }
     }
     fn bind_symbol_from_refcell(&mut self, symbol: Symbol, value: &Rc<RefCell<Form>>) {
-        println!("symbol: {symbol:?}, value: {value:?}");
+        // println!("symbol: {symbol:?}, value: {value:?}");
         let symref = Rc::clone(value);
         self.insert(symbol, symref);
     }
@@ -322,14 +322,14 @@ impl Environment {
     }
 
     pub fn push_context(&mut self, ctx: Context) {
-        println!("Push context");
+        // println!("Push context");
         self.bindings.push(ctx);
     }
 
     // Pops the topmost context from the context-stack.
     #[allow(dead_code)]
     pub fn pop_context(&mut self) {
-        println!("Pop context");
+        // println!("Pop context");
         self.bindings.pop();
     }
 }
@@ -452,7 +452,7 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                                 // println!("\n");
 
                                 // println!("\t=Matching param to args=");
-                                println!("\t=Testing bind_params=");
+                                // println!("\t=Testing bind_params=");
 
                                 // create a new context, and for each formal parameter, bind the args passed
                                 // in the form being evaluated
@@ -474,13 +474,13 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                                 }
                                 // println!("global env (after): {env:?}");
 
-                                println!("[DEBUG] Valid function form");
+                                // println!("[DEBUG] Valid function form");
 
-                                println!("\tparams: {:?}", fun.params);
-                                println!("\tcontext: {:?}", fun.context);
-                                println!("\tenv: {:?}", fun.env);
-                                println!("\tbody: {:?}", fun.body);
-                                println!("\n");
+                                // println!("\tparams: {:?}", fun.params);
+                                // println!("\tcontext: {:?}", fun.context);
+                                // println!("\tenv: {:?}", fun.env);
+                                // println!("\tbody: {:?}", fun.body);
+                                // println!("\n");
 
                                 let ret = evaluate(*fun.body, env);
 
@@ -489,7 +489,7 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                                 }
                                 // fun.unbind_params();
 
-                                println!("fun ctx after call?: {:?}", fun.context);
+                                // println!("fun ctx after call?: {:?}", fun.context);
 
                                 return ret;
                             }
@@ -530,7 +530,7 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
 
             for elem in list.elements {
                 let res = evaluate(*elem, env);
-                println!("evaluated: {res:?}");
+                // println!("evaluated: {res:?}");
             }
             // println!("elements: {:?}", elements);
             Form::Nil()

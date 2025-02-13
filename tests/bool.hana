@@ -10,8 +10,6 @@
 (def greet-world (make-greeter "Hello, world!"))
 (def greet-universe (make-greeter "Hello, universe!"))
 
-(greet-world)
-(greet-universe)
 
 
 
@@ -19,3 +17,8 @@
 
 
 (car (cdr (cdr (cdr my-list))))
+
+(progn
+  (greet-world)
+  (greet-universe))
+
