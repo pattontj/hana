@@ -96,3 +96,35 @@ pub fn handle_progn(funcall: &List, env: &mut Environment) -> Option<Form> {
 
     return Some(eval);
 }
+
+
+/*
+    A let special form takes a list of tuples (a list of two elems), and a form to evaluate.
+    For each tuple in the list, the first element is expected to be a symbol, and the right value
+    is bound to it in a new scope. Once all tuples are bound, the body form is evaluated.
+*/
+pub fn handle_let(funcall: &List, env: &mut Environment) -> Option<Form> {
+    let mut itr= funcall.elements.iter();
+    itr.next();
+
+    let tuples = *itr.next().unwrap().clone();
+    let body = itr.next().unwrap();
+
+    match tuples {
+        Form::List(tuples) => {
+            println!("Tuples list: {tuples:?}");
+        }
+        _ => {
+            println!("Error:");
+        }
+    }
+    
+
+    // let mut eval = Form::Nil();
+
+    // while let Some(tuple) = form.next() {
+        // eval = evaluate(*form.clone(), env);
+    // }
+
+    return Some(Form::Nil());
+}
