@@ -3,10 +3,12 @@
 (def life 42)
 
 (def make-greeter
-  (lambda ()
-          (lambda (x) x)))
+  (lambda (greeting)
+          (lambda () greeting)))
 
 
-(def greet (make-greeter))
+(def greet-world (make-greeter "Hello, world!"))
+(def greet-universe (make-greeter "Hello, universe!"))
 
-(greet "test?")
+(greet-world)
+(greet-universe)

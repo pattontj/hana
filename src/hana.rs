@@ -110,6 +110,10 @@ impl Function {
         }
     }
 
+    pub fn unbind_params(&mut self) {
+        self.context.clear();
+    }
+
     /*
         Binds a symbol to a function's internal context by fetching it's Rc-Refcell
         via an env lookup.
@@ -450,13 +454,13 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                         // if the symbol is a function, treat it as a function call
                         match fun {
                             Form::Function(mut fun) => {
-                                println!("[DEBUG] Valid function form");
+                                // println!("[DEBUG] Valid function form");
 
-                                println!("\tparams: {:?}", fun.params);
-                                println!("\tcontext: {:?}", fun.context);
-                                println!("\tenv: {:?}", fun.env);
-                                println!("\tbody: {:?}", fun.body);
-                                println!("\n");
+                                // println!("\tparams: {:?}", fun.params);
+                                // println!("\tcontext: {:?}", fun.context);
+                                // println!("\tenv: {:?}", fun.env);
+                                // println!("\tbody: {:?}", fun.body);
+                                // println!("\n");
 
                                 /*
                                     PROBLEM:
@@ -503,13 +507,13 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                                 iterate through the function's env back to front, and clone each context
                                 into the current env.
                                 */
-                                println!("global env (before): {env:?}");
+                                // println!("global env (before): {env:?}");
 
                                 env.push_context(fun.context.clone());
                                 for it in fun.env.bindings.iter().rev() {
                                     env.push_context(it.clone());
                                 }
-                                println!("global env (after): {env:?}");
+                                // println!("global env (after): {env:?}");
 
                                 println!("[DEBUG] Valid function form");
 
@@ -524,6 +528,9 @@ pub fn evaluate(form: Form, env: &mut Environment) -> Form {
                                 for i in (0..fun.env.bindings.len() + 1) {
                                     env.pop_context();
                                 }
+                                // fun.unbind_params();
+
+                                println!("fun ctx after call?: {:?}", fun.context);
 
                                 return ret;
                                 // if let Some((_, rest)) = elements.as_slice().split_first() {
