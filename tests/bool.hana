@@ -42,3 +42,14 @@
     (def tmp (/ tmp 2))
     tmp))
 
+
+(def count 0)
+
+(def counter (lambda ()
+             (def count (+ count 1))))
+
+(each k v my-list
+      (counter)
+      )
+
+count

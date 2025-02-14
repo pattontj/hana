@@ -115,7 +115,7 @@ pub fn handle_let(funcall: &List, env: &mut Environment) -> Option<Form> {
         Form::List(tuples) => {
             // println!("Tuples list: {tuples:?}");
             for tup in tuples.elements {
-                println!("tup: {tup:?}");
+                // println!("tup: {tup:?}");
 
                 match *tup {
                     Form::List(tup) => {
@@ -126,7 +126,7 @@ pub fn handle_let(funcall: &List, env: &mut Environment) -> Option<Form> {
                             Form::Symbol(s) => Some(s),
                             _ => None,
                         } {
-                            println!("sym: {s:?}, val: {val:?}");
+                            // println!("sym: {s:?}, val: {val:?}");
                             env.bind_symbol(s, *val.clone());
                         }
                     }
@@ -143,3 +143,87 @@ pub fn handle_let(funcall: &List, env: &mut Environment) -> Option<Form> {
 
     return Some(e);
 }
+
+/*
+    (each k v list-form body-form)
+
+    Takes two symbol names that represent the key and value in that order, and
+    then a list form. For each element in the list in order of appearance,
+    the key (default: integer) and value indexed by that key are bound to
+    the symbol names given in a new context.
+
+*/
+pub fn handle_each(funcall: &List, env: &mut Environment) -> Option<Form> {
+    let mut itr = funcall.elements.iter();
+    itr.next();
+
+    // if let some(key) = match *itr.next().unwrap().clone() {
+    //     form::symbol(_) => {}
+    //     _ => {}
+    // } {}
+    let mut eval: Form = Form::Nil();
+
+    let key = *itr.next().unwrap().clone();
+    let value = *itr.next().unwrap().clone();
+    let lst = *itr.next().unwrap().clone();
+    let body = *itr.next().unwrap().clone();
+
+    match (key.clone(), value.clone(), lst.clone(), body.clone()) {
+        (Form::Symbol(k), Form::Symbol(v), lst, _) => {
+            println!("{:?}", key);
+            println!("{:?}", value);
+
+            let myl: List = match lst.clone() {
+                Form::List(lst) => {
+                    println!("Not an error");
+                    lst
+                }
+                Form::Symbol(lst) => {
+                    println!("Not an error");
+                    // let l = lst;
+                    let symres = env
+                        .lookup_symbol(lst)
+                        .unwrap()
+                        .as_ref()
+                        .borrow_mut()
+                        .clone();
+                    // println!("{symres:?}");
+                    match symres {
+                        Form::List(symres) => symres,
+                        _ => List { elements: vec![] },
+                    }
+                }
+                _ => {
+                    println!("Error?");
+                    List { elements: vec![] }
+                }
+            };
+
+            env.push_new_context();
+
+            for elem in myl.elements.clone().into_iter() {
+                println!("v: {v:?}, elem: {elem:?}, body: {body:?}");
+                env.bind_symbol(v.clone(), *elem);
+                eval = evaluate(body.clone(), env);
+                println!("eval :{eval:?}");
+            }
+
+            env.pop_context();
+
+            println!("myl: {:?}", myl);
+        }
+        // (Form::Symbol(key), Form::Symbol(value), Form::List(lst), _) => {
+        //     println!("{:?}", key);
+        //     println!("{:?}", value);
+        //     println!("{:?}", lst);
+        // }
+        _ => {
+            println!("Error? ");
+        }
+    }
+
+    // return Some(e);
+    return Some(eval);
+}
+
+fn each_get_kv(key: Form) {}
