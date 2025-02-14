@@ -81,6 +81,51 @@ pub fn def_symbol(funcall: &List, env: &mut Environment) -> Option<Form> {
     return Some(Form::Nil());
 }
 
+pub fn set_symbol(funcall: &List, env: &mut Environment) -> Option<Form> {
+    if funcall.elements.len() < 3 {
+        println!("Error: function 'def' takes >= 2 parameters");
+        return Some(Form::Nil());
+    }
+
+    let sym = *funcall.elements[1].clone();
+    let value = *funcall.elements[2].clone();
+
+    // env.lookup_symbol(sym)
+    let symref = match sym.clone() {
+        Form::Symbol(sym) => {
+            let r = env.lookup_symbol(sym);
+            Some(r)
+        }
+        _ => None,
+    };
+
+    if let Some(symref) = symref {
+        // let value = symref.unwrap().borrow_mut().clone();
+
+        // *symref.clone().unwrap().borrow_mut() = Form::Symbol("test".to_string());
+        *symref.clone().unwrap().borrow_mut() = value;
+        // *value = Form::Nil();
+        println!("Value: {:?}", symref.unwrap().borrow_mut().clone());
+    } else {
+        println!(
+            "Error: cannot set value of a non-bound symbol ",
+            // sym.clone()
+        );
+    }
+
+    // let value = *funcall.elements[2].clone();
+
+    // match sym {
+    //     Form::Symbol(sym) => {
+    //         let evaluated = evaluate(value, env);
+    //         env.bind_symbol(sym, evaluated);
+    //     }
+    //     _ => {}
+    // }
+
+    return Some(Form::Nil());
+}
+
 /*
     Takes a variable number of forms, and evaluates each one from left to right.
     returns the result of the last evaluated form. If no forms are given, it returns

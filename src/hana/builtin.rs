@@ -16,6 +16,7 @@ pub fn builtin_function(symbol: &Symbol, funcall: &List, env: &mut Environment) 
         "cdr" => handle_cdr(funcall, env),
         "progn" => handle_progn(funcall, env),
         "let" => handle_let(funcall, env),
+        "set" => set_symbol(funcall, env),
         "each" => handle_each(funcall, env),
         "if" => handle_if(funcall, env),
         "+" => handle_add(funcall, env),

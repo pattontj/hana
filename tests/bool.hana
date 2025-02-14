@@ -43,13 +43,5 @@
     tmp))
 
 
-(def count 0)
-
-(def counter (lambda ()
-             (def count (+ count 1))))
-
-(each k v my-list
-      (counter)
-      )
-
-count
+(set life 0)
+life
