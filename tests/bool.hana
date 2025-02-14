@@ -30,3 +30,15 @@
       )
     (+ x y z)
 )
+
+
+(let ((x life)
+      (y life))
+  (progn
+    (def tmp life)
+    (def tmp (+ tmp 1))
+    (def tmp (+ tmp 2))
+    (def tmp (+ tmp 3))
+    (def tmp (/ tmp 2))
+    tmp))
+

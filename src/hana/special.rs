@@ -1,3 +1,5 @@
+use std::any::Any;
+
 use crate::hana::*;
 
 pub fn handle_if(funcall: &List, env: &mut Environment) -> Option<Form> {
@@ -97,14 +99,13 @@ pub fn handle_progn(funcall: &List, env: &mut Environment) -> Option<Form> {
     return Some(eval);
 }
 
-
 /*
     A let special form takes a list of tuples (a list of two elems), and a form to evaluate.
     For each tuple in the list, the first element is expected to be a symbol, and the right value
     is bound to it in a new scope. Once all tuples are bound, the body form is evaluated.
 */
 pub fn handle_let(funcall: &List, env: &mut Environment) -> Option<Form> {
-    let mut itr= funcall.elements.iter();
+    let mut itr = funcall.elements.iter();
     itr.next();
 
     let tuples = *itr.next().unwrap().clone();
@@ -112,19 +113,33 @@ pub fn handle_let(funcall: &List, env: &mut Environment) -> Option<Form> {
 
     match tuples {
         Form::List(tuples) => {
-            println!("Tuples list: {tuples:?}");
+            // println!("Tuples list: {tuples:?}");
+            for tup in tuples.elements {
+                println!("tup: {tup:?}");
+
+                match *tup {
+                    Form::List(tup) => {
+                        let sym = tup.elements.first().unwrap();
+                        let val = tup.elements.last().unwrap();
+
+                        if let Some(s) = match *sym.clone() {
+                            Form::Symbol(s) => Some(s),
+                            _ => None,
+                        } {
+                            println!("sym: {s:?}, val: {val:?}");
+                            env.bind_symbol(s, *val.clone());
+                        }
+                    }
+                    _ => {}
+                }
+            }
         }
         _ => {
             println!("Error:");
         }
     }
-    
 
-    // let mut eval = Form::Nil();
+    let e = evaluate(*body.clone(), env);
 
-    // while let Some(tuple) = form.next() {
-        // eval = evaluate(*form.clone(), env);
-    // }
-
-    return Some(Form::Nil());
+    return Some(e);
 }
