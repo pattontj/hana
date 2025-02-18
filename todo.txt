@@ -1,8 +1,23 @@
 
 Functions:
 - cons
-- progn
 - read & write
+- common list functions like append, push back/front, etc. 
+- map, apply, etc.
+
+
+
+List functions:
+- append
+- remove
+- push front/back
+- map
+- apply
+- reverse
+
+
+Type inferencing:
+- basic 'is[type]?' for all the built-in type
 
 
 Macro basics - higher-order helpers:
@@ -15,3 +30,17 @@ C-FFI:
 - Read shared libraries and get valid syms
 - Need some common way to bind those .so symbols to hana symbols
 	- Need functions to map datatypes in hana to C datatypes
+
+
+
+Done:
+- progn
+- let
+- set
+- each
+- 'list' construction fn
+- nth
+- last
+- len
+
+

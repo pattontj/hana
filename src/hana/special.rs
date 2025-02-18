@@ -171,8 +171,9 @@ pub fn handle_let(funcall: &List, env: &mut Environment) -> Option<Form> {
                             Form::Symbol(s) => Some(s),
                             _ => None,
                         } {
+                            let ev = evaluate(*val.clone(), env);
                             // println!("sym: {s:?}, val: {val:?}");
-                            env.bind_symbol(s, *val.clone());
+                            env.bind_symbol(s, ev);
                         }
                     }
                     _ => {}

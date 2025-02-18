@@ -45,3 +45,13 @@
 
 (set life 0)
 life
+
+
+(def l (list 1 2 3 4))
+(nth 4 l)
+(len l)
+(cdr l)
+
+
+(last l)
+(list 1 l)

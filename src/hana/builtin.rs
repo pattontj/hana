@@ -1,3 +1,6 @@
+use core::str;
+use std::iter::Map;
+
 use crate::hana::special::*;
 use crate::hana::*;
 
@@ -18,6 +21,9 @@ pub fn builtin_function(symbol: &Symbol, funcall: &List, env: &mut Environment) 
         "let" => handle_let(funcall, env),
         "set" => set_symbol(funcall, env),
         "each" => handle_each(funcall, env),
+        "list" => create_list(funcall, env),
+        "nth" => handle_nth(funcall, env),
+        "len" => handle_len(funcall, env),
         "if" => handle_if(funcall, env),
         "+" => handle_add(funcall, env),
         "-" => handle_sub(funcall, env),
@@ -28,6 +34,7 @@ pub fn builtin_function(symbol: &Symbol, funcall: &List, env: &mut Environment) 
         ">" => handle_gt(funcall, env),
         ">=" => handle_gte(funcall, env),
         "=" => handle_eq(funcall, env),
+        "!=" => handle_neq(funcall, env),
         _ => {
             return None;
         }
@@ -410,6 +417,30 @@ fn handle_eq(funcall: &List, env: &mut Environment) -> Option<Form> {
     // Some(Form::Nil())
 }
 
+fn handle_neq(funcall: &List, env: &mut Environment) -> Option<Form> {
+    if funcall.elements.len() < 3 {
+        println!("Error: function '*' takes >= 2 parameters");
+        return Some(Form::Nil());
+    }
+    let mut itr = funcall.elements.iter();
+    itr.next();
+    let mut lhs = *itr
+        .next()
+        .expect("Error: cannot retrieve second argument from function call to eq")
+        .clone();
+    let mut rhs = *itr
+        .next()
+        .expect("Error: cannot retrieve third argument from function call to eq")
+        .clone();
+
+    lhs = evaluate(lhs, env);
+    rhs = evaluate(rhs, env);
+
+    Some(Form::Bool(lhs != rhs))
+
+    // Some(Form::Nil())
+}
+
 /*
     Creates a new function via the (lambda) function call, closing over
     any referenced symbols in the environment at time of creation.
@@ -489,6 +520,10 @@ fn handle_car(funcall: &List, env: &mut Environment) -> Option<Form> {
                 let lst = lstref.clone();
                 match lst {
                     Form::List(lst) => {
+                        if lst.elements.len() == 0 {
+                            return Some(Form::Nil());
+                        }
+
                         let car = lst.elements.first().unwrap();
 
                         return Some(*car.clone());
@@ -528,6 +563,9 @@ fn handle_cdr(funcall: &List, env: &mut Environment) -> Option<Form> {
                 let cdr = evaluate(*itr.clone(), env);
                 match cdr {
                     Form::List(cdr) => {
+                        if cdr.elements.len() <= 1 {
+                            return Some(Form::Nil());
+                        }
                         let (_, c) = cdr.elements.split_first().unwrap();
 
                         // return Some(*car.clone());
@@ -547,6 +585,9 @@ fn handle_cdr(funcall: &List, env: &mut Environment) -> Option<Form> {
                 let lst = lstref.clone();
                 match lst {
                     Form::List(lst) => {
+                        if lst.elements.len() <= 1 {
+                            return Some(Form::Nil());
+                        }
                         let (_, cdr) = lst.elements.split_first().unwrap();
 
                         return Some(Form::List(List {
@@ -565,6 +606,100 @@ fn handle_cdr(funcall: &List, env: &mut Environment) -> Option<Form> {
     }
 
     Some(Form::Nil())
+}
+
+fn create_list(funcall: &List, env: &mut Environment) -> Option<Form> {
+    let mut itr = funcall.elements.iter();
+    itr.next();
+
+    let mut list = List { elements: vec![] };
+
+    while let Some(itr) = itr.next() {
+        let eval = evaluate(*itr.clone(), env);
+        list.elements.push(Box::new(eval));
+    }
+
+    Some(Form::List(list))
+}
+
+fn handle_nth(funcall: &List, env: &mut Environment) -> Option<Form> {
+    let mut itr = funcall.elements.iter();
+    itr.next();
+
+    let mut index = -1;
+    if let Some(idx) = itr.next() {
+        match *idx.clone() {
+            Form::Integer(idx) => {
+                index = idx;
+            }
+            _ => {
+                println!("Error: expected type integer in nth");
+            }
+        }
+    }
+
+    let mut list = List { elements: vec![] };
+    if let Some(lst) = itr.next() {
+        match *lst.clone() {
+            Form::List(lst) => {
+                list = lst;
+            }
+            Form::Symbol(_) => {
+                let eval = evaluate(*lst.clone(), env);
+                match eval {
+                    Form::List(ev) => {
+                        list = ev;
+                    }
+                    _ => {
+                        println!("Error: symbol passed to nth does not eval to a list.");
+                        return Some(Form::Nil());
+                    }
+                }
+            }
+            _ => {
+                println!("Error: expected type integer in nth");
+                return Some(Form::Nil());
+            }
+        }
+    }
+
+    if index < 0 || index as usize >= list.elements.len() {
+        return Some(Form::Nil());
+    }
+
+    let thing = list.elements[index as usize].clone();
+
+    Some(*thing)
+}
+
+fn handle_len(funcall: &List, env: &mut Environment) -> Option<Form> {
+    let mut itr = funcall.elements.iter();
+    itr.next();
+
+    if let Some(itr) = itr.next() {
+        match *itr.clone() {
+            Form::List(itr) => {
+                return Some(Form::Integer(itr.elements.len() as i32));
+            }
+            Form::Symbol(_) => {
+                let eval = evaluate(*itr.clone(), env);
+                match eval {
+                    Form::List(itr) => {
+                        return Some(Form::Integer(itr.elements.len() as i32));
+                    }
+                    _ => {
+                        println!("Error: ");
+                        return Some(Form::Nil());
+                    }
+                }
+            }
+            _ => {
+                println!("Error: cannot call 'len' on non list or string type.");
+                return Some(Form::Nil());
+            }
+        }
+    }
+    return Some(Form::Nil());
 }
 
 // fn handle_add(funcall: &List, env: &mut Environment) -> Option<Form> {

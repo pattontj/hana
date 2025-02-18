@@ -92,8 +92,9 @@ impl Function {
                 (Form::Symbol(param), arg) => {
                     println!("Arg?: {arg:?}");
                     // let a = evaluate(Form::Symbol(arg), env);
+                    let eval = evaluate(arg, env);
                     // println!("eval test in fn bind_params: {a:?}");
-                    self.context.bind_symbol(param.clone(), arg);
+                    self.context.bind_symbol(param.clone(), eval);
                 }
                 _ => {}
             }
@@ -210,6 +211,9 @@ pub fn build_ast_from_form(pair: pest::iterators::Pair<Rule>) -> Form {
             let b: bool = pair.as_str().parse().unwrap();
             Form::Bool(b)
         }
+
+        Rule::nil => Form::Nil(),
+
         Rule::symbol => Form::Symbol(String::from(pair.as_str())),
 
         Rule::list => {

@@ -8,7 +8,7 @@ program = _{SOI ~ NEWLINE* ~ ( (quoted_form | form) ~ NEWLINE+ ) * ~ form? ~ EOI
 // form = _{ sexpr | qexpr}
 
 quoted_form = { "'" ~ form }
-form = { quoted_form | real | integer | string | bool | symbol | list }
+form = { quoted_form | nil | real | integer | string | bool | symbol | list }
 
 list = { lparen ~ NEWLINE* ~ ( ( quoted_form | form ) ~ NEWLINE*)* ~ NEWLINE* ~ rparen }
 
@@ -26,9 +26,12 @@ not_reserved = {
       |  "\t" 
       | "true"
       | "false"
+      | "nil"
     )
     ~ASCII
 }
+
+nil = @{ "nil" }
 
 bool = @{ "true" | "false" }
 

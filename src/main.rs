@@ -1,3 +1,5 @@
+use std::ascii::AsciiExt;
+use std::collections::HashMap;
 use std::env;
 use std::ffi::CString;
 use std::fs;
@@ -7,7 +9,24 @@ use hana::*;
 
 fn main() {
     env::set_var("RUST_BACKTRACE", "1");
-    let unparsed_file = fs::read_to_string("tests/bool.hana").expect("cannot read file!");
+    let mut unparsed_file = fs::read_to_string("tests/bool.hana").expect("cannot read file!");
+
+    let mut funcs = HashMap::new();
+    funcs.insert(
+        "last",
+        "(def last (lambda (lst)
+                        (if (= (cdr lst) nil)
+                            (car lst)
+                            (last (cdr lst)))))",
+    );
+
+    let mut builtins = String::new();
+    for (_, f) in funcs {
+        builtins += f;
+        builtins += "\n";
+    }
+
+    unparsed_file = builtins + &unparsed_file;
 
     // let file = HanaParser::parse(Rule::program, &unparsed_file)
     //     .expect("unsuccessful parse")
